@@ -65,17 +65,14 @@ public sealed class EffectsTests
         var buffer = Signals.Sine(1_440, 2, 0.5f);
         var pitch = new PitchShifter(3f);
         var reverb = new Reverb(0.5f, 0.3f);
-        pitch.Process(buffer);
-        reverb.Process(buffer);
 
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var i = 0; i < 100; i++)
+        var allocated = Allocations.InSteadyState(() =>
         {
             pitch.Process(buffer);
             reverb.Process(buffer);
-        }
+        });
 
-        (GC.GetAllocatedBytesForCurrentThread() - before).Should().Be(0);
+        allocated.Should().Be(0);
     }
 
     [Fact]
