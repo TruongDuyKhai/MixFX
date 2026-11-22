@@ -140,8 +140,26 @@ public sealed class AudioEngine : IAudioEngine
             _playingCounts[sound.Id] = _playingCounts.GetValueOrDefault(sound.Id) + 1;
         }
 
-        Post(() => StartPlayback(sound));
+        Post(() => StartPlayback(sound, preview: false));
     }
+
+    public void Preview(SoundItem sound)
+    {
+        ArgumentNullException.ThrowIfNull(sound);
+
+        lock (_stateLock)
+        {
+            _playingCounts[sound.Id] = _playingCounts.GetValueOrDefault(sound.Id) + 1;
+        }
+
+        Post(() =>
+        {
+            StopPlaybacks(p => p.IsPreview);
+            StartPlayback(sound, preview: true);
+        });
+    }
+
+    public void StopPreview() => Post(() => StopPlaybacks(p => p.IsPreview));
 
     public void Stop(Guid soundId) => Post(() => StopPlaybacks(p => p.SoundId == soundId));
 
@@ -502,25 +520,26 @@ public sealed class AudioEngine : IAudioEngine
 
     // ── Playback ────────────────────────────────────────────────────────────
 
-    private void StartPlayback(SoundItem sound)
+    private void StartPlayback(SoundItem sound, bool preview)
     {
-        if ((PlaybackMode)Volatile.Read(ref _playbackMode) == PlaybackMode.Exclusive)
+        if (!preview && (PlaybackMode)Volatile.Read(ref _playbackMode) == PlaybackMode.Exclusive)
         {
             StopPlaybacks(_ => true);
         }
 
-        var toGame = _gameOutput is not null;
+        // A preview is for the user's ears only; teammates must never hear the editor.
+        var toGame = !preview && _gameOutput is not null;
         var toMonitor = _monitorOutput is not null;
         if (!toGame && !toMonitor)
         {
-            FailPlayback(sound, "Chưa có thiết bị phát nào đang chạy.");
+            FailPlayback(sound, preview ? "Cần Output B (tai nghe) đang chạy để nghe thử." : "Chưa có thiết bị phát nào đang chạy.");
             return;
         }
 
         Playback playback;
         try
         {
-            playback = CreatePlayback(sound, toGame, toMonitor);
+            playback = CreatePlayback(sound, toGame, toMonitor, preview);
         }
         catch (Exception ex)
         {
@@ -554,7 +573,7 @@ public sealed class AudioEngine : IAudioEngine
         SoundStarted?.Invoke(this, new SoundStartedEventArgs(sound.Id));
     }
 
-    private Playback CreatePlayback(SoundItem sound, bool toGame, bool toMonitor)
+    private Playback CreatePlayback(SoundItem sound, bool toGame, bool toMonitor, bool preview)
     {
         var path = _library.GetFilePath(sound);
         var key = SoundCacheKey.For(path, sound.Edit);
@@ -575,7 +594,7 @@ public sealed class AudioEngine : IAudioEngine
             }
             else
             {
-                return CreateStreamedPlayback(sound, path, start, decoded, frames, toGame, toMonitor);
+                return CreateStreamedPlayback(sound, path, start, decoded, frames, toGame, toMonitor, preview);
             }
         }
 
@@ -583,11 +602,12 @@ public sealed class AudioEngine : IAudioEngine
         return new Playback(
             sound.Id,
             toGame ? new CachedVoice(sound.Id, cached, envelope) : null,
-            toMonitor ? new CachedVoice(sound.Id, cached, envelope) : null);
+            toMonitor ? new CachedVoice(sound.Id, cached, envelope) : null,
+            preview);
     }
 
     private static Playback CreateStreamedPlayback(
-        SoundItem sound, string path, TimeSpan start, DecodedAudio decoded, long frames, bool toGame, bool toMonitor)
+        SoundItem sound, string path, TimeSpan start, DecodedAudio decoded, long frames, bool toGame, bool toMonitor, bool preview)
     {
         var envelope = EditEnvelope.For(sound, frames);
         StreamedVoice? game = null;
@@ -612,7 +632,7 @@ public sealed class AudioEngine : IAudioEngine
             throw;
         }
 
-        var playback = new Playback(sound.Id, game, monitor);
+        var playback = new Playback(sound.Id, game, monitor, preview);
 
         // Fill the read-ahead before the voices go live so the first callbacks never underrun.
         playback.Pump();

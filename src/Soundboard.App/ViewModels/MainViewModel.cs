@@ -34,6 +34,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly ISettingsProvider _settings;
     private readonly IActionDispatcher _dispatcher;
     private readonly ISoundLibrary _library;
+    private readonly IWaveformService _waveforms;
     private readonly IDialogService _dialogs;
     private readonly IStartupRegistration _startup;
     private readonly ILogger<MainViewModel> _logger;
@@ -42,6 +43,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     // True while state is being copied *from* settings, so property setters do not write it back.
     private bool _syncing;
+    private bool _disposed;
 
     private string _settingsStatus = "Đang tải cài đặt…";
     private string? _settingsWarning;
@@ -69,6 +71,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ISettingsProvider settings,
         IActionDispatcher dispatcher,
         ISoundLibrary library,
+        IWaveformService waveforms,
         IDialogService dialogs,
         IStartupRegistration startup,
         ILogger<MainViewModel> logger)
@@ -77,12 +80,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _settings = settings;
         _dispatcher = dispatcher;
         _library = library;
+        _waveforms = waveforms;
         _dialogs = dialogs;
         _startup = startup;
         _logger = logger;
         _ui = SynchronizationContext.Current;
 
         StopAllCommand = new RelayCommand(_engine.StopAll);
+        ImportCommand = new AsyncRelayCommand(() => ImportAsync(_dialogs.PickAudioFiles()));
         RefreshDevicesCommand = new RelayCommand(RefreshDevices);
         OpenHotkeysCommand = new RelayCommand(_dialogs.ShowGlobalHotkeys);
         OpenSetupCommand = new RelayCommand(() =>
@@ -103,6 +108,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<DeviceOption> MonitorOutputs { get; } = [];
 
     public ICommand StopAllCommand { get; }
+
+    public ICommand ImportCommand { get; }
 
     public ICommand RefreshDevicesCommand { get; }
 
@@ -395,8 +402,62 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public void StopAll() => _engine.StopAll();
 
+    /// <summary>
+    /// Copies the files into the library (originals are only read, §5.3), adds them to the board and
+    /// opens the editor on the first one ("Import xong thì tự mở Editor").
+    /// </summary>
+    public async Task ImportAsync(IReadOnlyList<string> paths)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        if (paths.Count == 0)
+        {
+            return;
+        }
+
+        var problems = paths.Where(p => !SupportedAudioFormats.IsSupported(p))
+            .Select(p => $"{Path.GetFileName(p)}: định dạng không được hỗ trợ")
+            .ToList();
+        var imported = new List<SoundItem>();
+
+        foreach (var path in paths.Where(SupportedAudioFormats.IsSupported))
+        {
+            StatusMessage = $"Đang thêm {Path.GetFileName(path)}…";
+            if (await ImportOneAsync(path, _settings.Current.Sounds.Count + imported.Count) is { } sound)
+            {
+                imported.Add(sound);
+            }
+            else
+            {
+                problems.Add($"{Path.GetFileName(path)}: không đọc được file âm thanh");
+            }
+        }
+
+        if (imported.Count > 0)
+        {
+            _settings.Update(s => s with { Sounds = [.. s.Sounds, .. imported] });
+        }
+
+        StatusMessage = $"Đã thêm {imported.Count} sound.";
+        if (problems.Count > 0)
+        {
+            _dialogs.ShowError("Một số file không thêm được:\n" + string.Join('\n', problems));
+        }
+
+        if (imported.Count > 0)
+        {
+            _dialogs.EditSound(imported[0].Id);
+        }
+    }
+
     public void Dispose()
     {
+        // Idempotent: a throwing second call would abort the DI container's disposal of the engine and hooks.
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         _polling.Cancel();
         _polling.Dispose();
         _engine.StatusChanged -= OnEngineStatusChanged;
@@ -599,7 +660,51 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : "Đang phát: " + string.Join(", ", Tiles.Where(t => t.IsPlaying).Select(t => t.Name));
     }
 
-    private void EditSound(SoundTileViewModel tile) => ChangeKey(tile);
+    private async Task<SoundItem?> ImportOneAsync(string path, int position)
+    {
+        var id = Guid.NewGuid();
+        string libraryFile;
+        try
+        {
+            libraryFile = await _library.ImportAsync(path, id);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            _logger.LogWarning(ex, "Could not import {Path}", path);
+            return null;
+        }
+
+        var sound = new SoundItem(id, Path.GetFileNameWithoutExtension(path), libraryFile, SoundPalette.ForIndex(position),
+            AudioSettings.DefaultVolume, PlaybackKind.Preloaded, EditParams.None);
+        try
+        {
+            // Decoding once now proves the file is playable, sets Kind and warms the waveform cache for the editor.
+            var waveform = await _waveforms.LoadAsync(sound);
+            return sound with { Kind = EditLimits.KindFor(waveform.Duration) };
+        }
+        catch (Exception ex)
+        {
+            // Not a decodable audio file despite its extension: drop the library copy again.
+            _logger.LogWarning(ex, "Imported file {Path} could not be decoded", path);
+            TryDeleteLibraryFile(libraryFile);
+            return null;
+        }
+    }
+
+    private void TryDeleteLibraryFile(string libraryFile)
+    {
+        try
+        {
+            _library.Delete(libraryFile);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            // An orphaned library copy only costs disk space.
+            _logger.LogWarning(ex, "Could not delete library file {File}", libraryFile);
+        }
+    }
+
+    private void EditSound(SoundTileViewModel tile) => _dialogs.EditSound(tile.Id);
 
     private void ChangeKey(SoundTileViewModel tile) =>
         _dialogs.EditBinding(ActionIds.PlaySound, tile.Id, $"Phím tắt cho \"{tile.Name}\"", allowModeChoice: true);
@@ -621,15 +726,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         // Give a streamed playback time to close its file before deleting the library copy.
         await Task.Delay(FileReleaseDelay);
-        try
-        {
-            _library.Delete(sound.LibraryFile);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
-        {
-            // The sound is gone from the board either way; an orphaned library copy only costs disk space.
-            _logger.LogWarning(ex, "Could not delete library file {File}", sound.LibraryFile);
-        }
+        TryDeleteLibraryFile(sound.LibraryFile);
     }
 
     private async Task DuplicateAsync(SoundTileViewModel tile)

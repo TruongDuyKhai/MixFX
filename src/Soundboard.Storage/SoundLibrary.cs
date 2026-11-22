@@ -34,7 +34,29 @@ public sealed class SoundLibrary : ISoundLibrary
         return newName;
     }
 
-    public void Delete(string libraryFile) => File.Delete(ResolveLibraryFile(libraryFile));
+    public void Delete(string libraryFile)
+    {
+        var path = ResolveLibraryFile(libraryFile);
+        File.Delete(path);
+        File.Delete(Path.ChangeExtension(path, PeaksExtension));
+    }
+
+    public async Task<string> ImportAsync(string sourcePath, Guid soundId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
+        if (!SupportedAudioFormats.IsSupported(sourcePath))
+        {
+            throw new NotSupportedException($"'{Path.GetFileName(sourcePath)}' không phải định dạng âm thanh được hỗ trợ.");
+        }
+
+        var name = LibraryFileName(soundId, Path.GetExtension(sourcePath));
+        await CopyNewAsync(sourcePath, ResolveLibraryFile(name), cancellationToken).ConfigureAwait(false);
+        return name;
+    }
+
+    public string GetPeaksPath(string libraryFile) => Path.ChangeExtension(ResolveLibraryFile(libraryFile), PeaksExtension);
+
+    private const string PeaksExtension = ".peaks";
 
     internal static string LibraryFileName(Guid soundId, string extension) =>
         soundId.ToString("D") + extension.ToLowerInvariant();

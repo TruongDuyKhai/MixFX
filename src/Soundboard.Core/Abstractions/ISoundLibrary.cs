@@ -16,4 +16,13 @@ public interface ISoundLibrary
 
     /// <summary>Deletes a library copy (and anything cached for it). Never touches files outside the library.</summary>
     void Delete(string libraryFile);
+
+    /// <summary>
+    /// Copies a user's file into the library as <c>{soundId}.{ext}</c> and returns that name (§5.3).
+    /// The source is only ever opened for reading.
+    /// </summary>
+    Task<string> ImportAsync(string sourcePath, Guid soundId, CancellationToken cancellationToken = default);
+
+    /// <summary>Cache file for the waveform of a library file: <c>library\{guid}.peaks</c>.</summary>
+    string GetPeaksPath(string libraryFile);
 }

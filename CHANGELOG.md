@@ -5,6 +5,23 @@
 ## [Unreleased]
 
 ### Added
+- **P4 — Import + Editor.**
+  - Import bằng nút "+ Thêm sound" hoặc kéo thả file vào lưới, nhận wav / mp3 / ogg / flac / aac / m4a / wma. File được copy vào `library\{guid}.{ext}`; file gốc chỉ được mở để đọc và không bao giờ bị ghi.
+  - Mỗi file được giải mã thử khi import: file không đọc được thì bỏ bản sao và báo lỗi. Import xong tự mở Editor.
+  - **Waveform:** đỉnh tính theo bucket 10 ms, cache ở `library\{guid}.peaks`. File cache hỏng hoặc lạ thì tự tính lại.
+  - **Editor:**
+    - Kéo 2 marker vàng để cắt, có ô nhập số ms. Hiện độ dài sau cắt và cho biết sound sẽ được nạp vào RAM hay đọc dần từ đĩa.
+    - Fade in/out (vẽ trên waveform), gain −24…+12 dB, nút Normalize (đỉnh đoạn đã cắt về −1 dBFS), âm lượng, tên, màu.
+    - "Nghe thử" chỉ phát qua Output B, không bao giờ ra game.
+    - "Export WAV…" xuất file 48 kHz 16-bit stereo đã áp dụng chỉnh sửa, cắt ngọn (clip) chứ không để giá trị bị tràn.
+  - Mọi chỉnh sửa chỉ là `EditParams`, áp dụng lúc phát; file trong thư viện không đổi.
+- Thêm project test `Soundboard.App.Tests` cho ViewModel.
+
+### Fixed
+- Thoát app ném `ObjectDisposedException` vì `MainViewModel` bị Dispose hai lần (một lần ở `OnExit`, một lần do DI). Lỗi này làm việc giải phóng engine và hook bị dừng giữa chừng. Giờ `Dispose` gọi nhiều lần vẫn an toàn và chỉ DI giải phóng; có test tái hiện.
+- Mở app lần hai không đưa được cửa sổ đang chạy lên trước khi app khác giữ foreground. Giờ tiến trình mở sau nhường quyền foreground bằng `AllowSetForegroundWindow`.
+
+### Added (P3)
 - **P3 — Giao diện chính.** Dùng theme Fluent Dark của WPF, thanh tiêu đề cũng tối.
   - **Thanh trên:** chọn micro, Output A, Output B. Mỗi thiết bị có chấm trạng thái (đang chạy / chưa có / lỗi / mất kết nối). Có đèn MIC sáng khi giọng đang được truyền, cùng nút "Phím tắt chung" và "Hướng dẫn".
   - **Lưới ô sound:** tên, màu, phím tắt, thanh tiến trình khi phát. Bấm ô sẽ đi qua `IActionDispatcher` với `TriggerMode` của sound. Chuột phải có "Đổi phím" / "Nhân bản" / "Xóa"; xóa chỉ xóa bản sao trong thư viện.
