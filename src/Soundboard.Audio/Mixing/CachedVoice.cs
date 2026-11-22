@@ -1,10 +1,11 @@
 using Soundboard.Audio.Decoding;
+using Soundboard.Core.Abstractions;
 
 namespace Soundboard.Audio.Mixing;
 
 /// <summary>Plays a sound already decoded into RAM: no I/O and no allocation on the audio thread.</summary>
-internal sealed class CachedVoice(Guid soundId, CachedSound sound, EditEnvelope envelope)
-    : Voice(soundId, sound.Frames, envelope)
+internal sealed class CachedVoice(Guid soundId, CachedSound sound, EditEnvelope envelope, IEffect[]? effects = null)
+    : Voice(soundId, sound.Frames, envelope, effects)
 {
     // Audio thread only.
     private int _cursor;

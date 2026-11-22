@@ -166,6 +166,14 @@ Thêm tính năng mới nghĩa là **thêm class `IAction` mới**, không sửa
 - Đọc lỗi hoặc JSON hỏng thì khôi phục từ `.bak` và báo người dùng. **Không bao giờ** ghi đè bằng config rỗng.
 - Log ở `%AppData%\Soundboard\logs\`.
 
+### 5.8 Tính năng thử nghiệm (P6, sau feature flag — mặc định TẮT)
+Bật/tắt trong cửa sổ "Thử nghiệm"; cờ nằm ở `AppSettings.Features` (schema v2).
+- **Ducking** (`Ducking`): khi giọng đang được truyền (PTT mở), sound gửi vào game bị hạ `Audio.DuckingDb` (mặc định −12 dB, attack 10 ms, release 250 ms). Output B không bị ảnh hưởng.
+- **Hiệu ứng cho sound** (`SoundEffects`): `EditParams.Effects` gồm `pitch` (`semitones`, ±12) và `reverb` (`room`, `wet` 0…1), áp dụng lúc phát qua `IEffect`. Mỗi voice có chain riêng. Cờ tắt thì chain bị bỏ qua (nhưng vẫn giữ trong settings); Export khi cờ tắt không áp dụng hiệu ứng.
+- **Voice changer** (`VoiceChanger`): pitch-shift giọng thật (`Audio.VoicePitchSemitones`) trước cổng PTT; thêm khoảng 20 ms độ trễ.
+- **Playlist** (`Playlist`): `AppSettings.Playlist` là danh sách id sound theo thứ tự, phát lần lượt và lặp lại. Chỉ chuyển bài khi bài hiện tại phát **hết tự nhiên** (`SoundStoppedEventArgs.Completed`). Action `PlaylistNext` / `PlaylistStop`.
+- **Web remote** (`WebRemote`): HTTP chỉ trên `localhost:<port>`, mọi request cần token (tự tạo khi bật lần đầu), kiểm Host chống DNS rebinding. `GET /` (trang nút), `GET /api/sounds`, `POST /api/trigger?action=&target=&phase=press|down|up&mode=`. Đi qua `IActionDispatcher` như mọi nguồn khác.
+
 ---
 
 ## 6. Model dữ liệu chuẩn
@@ -329,6 +337,9 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Version `1.0.0-rc.1`, chưa gắn tag `v1.0.0` | Tag chỉ gắn sau khi người dùng xác nhận các tiêu chí cần game/thiết bị thật (mục 11) |
 | 2026-11-22 | Thêm `IAudioEngine.Preview` / `StopPreview` **không** kèm default implementation; thêm `ISoundLibrary.ImportAsync` / `GetPeaksPath`, `IWaveformService`, `IAudioExporter` | Default "không làm gì" cho Preview sẽ âm thầm sai, còn default "Play" thì phát ra game. Mỗi interface chỉ có một implementation, đã cập nhật hết kèm test |
 | 2026-11-22 | Export ra WAV 48 kHz 16-bit stereo, cắt ngọn (clip) khi vượt 0 dBFS | 16-bit là định dạng mọi app/game đều nhận; clip đỡ tệ hơn để giá trị tràn thành tiếng "bụp" |
+| 2026-11-22 | P6: schema settings **v2** (`MigrateV1ToV2`) thêm feature flags, `DuckingDb`, `VoicePitchSemitones`, `Playlist`, `WebRemote`. Migration chỉ thêm khóa thiếu; khóa có mặt mà `null`/sai kiểu thì coi file là hỏng | Đúng luật 7.4.13; migration không được "sửa" dữ liệu hỏng vì sẽ che mất đường khôi phục từ `.bak` |
+| 2026-11-22 | P6: `IEffect` (Core) + `PitchShifter`/`Reverb` tự viết (không thêm package); thêm `IAudioEngine.ApplyFeatures` (không default impl) và `SoundStoppedEventArgs.Completed` | DSP tự viết thì không cấp phát trong audio callback và không phụ thuộc thư viện ngoài; một no-op mặc định cho `ApplyFeatures` sẽ làm các cờ nói dối |
+| 2026-11-22 | P6: web remote dùng `HttpListener` chỉ trên `localhost`, bắt buộc token | Nghe trên LAN cần quyền Admin (URL ACL) và lộ soundboard ra mạng; Stream Deck/script chạy cùng máy |
 | 2026-11-22 | Phát hành qua tag + GitHub Actions (`release.ps1` → tag `vX.Y.Z` → workflow Release); CI cho `main` và PR | Bản cài luôn được build từ đúng commit đã tag, trên máy sạch của GitHub, kèm checksum; người dùng tải ở trang Releases |
 | 2026-11-22 | Watchdog: cài lại hook mỗi 10 s (cài mới → xử lý lời gọi đang chờ → gỡ cũ), lọc sự kiện trùng | Windows gỡ hook chậm mà không báo và không có API để phát hiện; cài lại định kỳ giới hạn thời gian mất phím tắt ở mức ≤ 10 s |
 | 2026-11-22 | Hook chuột `WH_MOUSE_LL` chỉ cài khi có binding chuột hoặc đang ghi nhận phím | Mỗi lần di chuột trong game đều đi qua hook; không cần thì không cài để không thêm độ trễ |

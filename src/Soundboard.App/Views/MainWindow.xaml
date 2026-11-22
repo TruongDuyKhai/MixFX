@@ -74,6 +74,7 @@
           <Button Margin="8,0,0,0" Content="⟳" ToolTip="Làm mới danh sách thiết bị" Command="{Binding RefreshDevicesCommand}" />
           <Button Margin="8,0,0,0" Content="Phím tắt chung" Command="{Binding OpenHotkeysCommand}" />
           <Button Margin="8,0,0,0" Content="Hướng dẫn" Command="{Binding OpenSetupCommand}" />
+          <Button Margin="8,0,0,0" Content="Thử nghiệm" ToolTip="Tính năng thử nghiệm: ducking, hiệu ứng, voice changer, playlist, web remote" Command="{Binding OpenExperimentalCommand}" />
         </StackPanel>
       </Grid>
     </Border>
@@ -144,6 +145,13 @@
         <StackPanel Grid.Column="4" VerticalAlignment="Center" Width="200">
           <Button HorizontalAlignment="Stretch" Padding="16,8" Content="■  Dừng tất cả" Command="{Binding StopAllCommand}" />
           <TextBlock Margin="0,6,0,0" Style="{StaticResource Caption}" Text="{Binding NowPlaying}" TextTrimming="CharacterEllipsis" ToolTip="{Binding NowPlaying}" />
+          <StackPanel Margin="0,6,0,0" Visibility="{Binding PlaylistEnabled, Converter={StaticResource BoolToVisibility}}">
+            <UniformGrid Columns="2">
+              <Button Margin="0,0,3,0" Content="▶ Playlist" ToolTip="Phát playlist / bài kế tiếp" Command="{Binding PlaylistNextCommand}" />
+              <Button Margin="3,0,0,0" Content="■ Playlist" ToolTip="Dừng playlist" Command="{Binding PlaylistStopCommand}" />
+            </UniformGrid>
+            <TextBlock Margin="0,4,0,0" Style="{StaticResource Caption}" Text="{Binding PlaylistNowText}" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
         </StackPanel>
       </Grid>
     </Border>
@@ -167,12 +175,17 @@
                     <MenuItem Header="Sửa" Command="{Binding EditCommand}" />
                     <MenuItem Header="Đổi phím" Command="{Binding ChangeKeyCommand}" />
                     <MenuItem Header="Nhân bản" Command="{Binding DuplicateCommand}" />
+                    <MenuItem Header="{Binding PlaylistMenuText}" Command="{Binding TogglePlaylistCommand}"
+                              Visibility="{Binding PlaylistEnabled, Converter={StaticResource BoolToVisibility}}" />
                     <Separator />
                     <MenuItem Header="Xóa" Command="{Binding DeleteCommand}" />
                   </ContextMenu>
                 </Border.ContextMenu>
                 <Grid>
                   <Border Height="6" VerticalAlignment="Top" CornerRadius="10,10,0,0" Background="{Binding Color, Converter={StaticResource HexToBrush}}" />
+                  <TextBlock Margin="0,12,10,0" HorizontalAlignment="Right" VerticalAlignment="Top" Text="♫" ToolTip="Có trong playlist"
+                             Foreground="{StaticResource MutedForegroundBrush}"
+                             Visibility="{Binding ShowPlaylistBadge, Converter={StaticResource BoolToVisibility}}" />
                   <StackPanel Margin="12,16,12,0">
                     <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     <TextBlock Margin="0,4,0,0" Style="{StaticResource Caption}" Text="{Binding HotkeyText}" />

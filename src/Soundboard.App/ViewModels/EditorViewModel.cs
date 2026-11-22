@@ -35,6 +35,11 @@ public sealed class EditorViewModel : ObservableObject
     private double _gainDb;
     private bool _isLoading = true;
     private string _statusMessage = string.Empty;
+    private double _pitchSemitones;
+    private double _reverbRoom = DefaultReverbRoom;
+    private double _reverbWet;
+
+    private const double DefaultReverbRoom = 0.5;
 
     public EditorViewModel(
         SoundItem sound,
@@ -62,6 +67,18 @@ public sealed class EditorViewModel : ObservableObject
         _fadeInMs = sound.Edit.FadeInMs;
         _fadeOutMs = sound.Edit.FadeOutMs;
         _gainDb = sound.Edit.GainDb;
+
+        EffectsEnabled = settings.Current.Features.SoundEffects;
+        if (sound.Edit.Effects.Find(EffectCatalog.Pitch) is { } pitch)
+        {
+            _pitchSemitones = pitch.GetFloat(EffectCatalog.PitchSemitones, 0f);
+        }
+
+        if (sound.Edit.Effects.Find(EffectCatalog.Reverb) is { } reverb)
+        {
+            _reverbRoom = reverb.GetFloat(EffectCatalog.ReverbRoom, (float)DefaultReverbRoom);
+            _reverbWet = reverb.GetFloat(EffectCatalog.ReverbWet, 0f);
+        }
 
         PreviewCommand = new RelayCommand(() => _engine.Preview(BuildEdited()), () => !IsLoading);
         StopPreviewCommand = new RelayCommand(_engine.StopPreview);
@@ -184,6 +201,45 @@ public sealed class EditorViewModel : ObservableObject
 
     public string GainText => GainDb.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " dB";
 
+    /// <summary>The SoundEffects flag: the effect controls exist only while it is on.</summary>
+    public bool EffectsEnabled { get; }
+
+    public double MaxPitch => EffectCatalog.MaxPitchSemitones;
+
+    public double PitchSemitones
+    {
+        get => _pitchSemitones;
+        set
+        {
+            if (SetProperty(ref _pitchSemitones, Math.Round(Math.Clamp(value, -EffectCatalog.MaxPitchSemitones, EffectCatalog.MaxPitchSemitones) * 2) / 2))
+            {
+                OnPropertyChanged(nameof(PitchText));
+            }
+        }
+    }
+
+    public string PitchText => PitchSemitones.ToString("+0.#;-0.#;0", CultureInfo.InvariantCulture) + " cung";
+
+    public double ReverbRoom
+    {
+        get => _reverbRoom;
+        set => SetProperty(ref _reverbRoom, Math.Round(Math.Clamp(value, 0, 1), 2));
+    }
+
+    public double ReverbWet
+    {
+        get => _reverbWet;
+        set
+        {
+            if (SetProperty(ref _reverbWet, Math.Round(Math.Clamp(value, 0, 1), 2)))
+            {
+                OnPropertyChanged(nameof(ReverbText));
+            }
+        }
+    }
+
+    public string ReverbText => ReverbWet <= 0 ? "Tắt" : Math.Round(ReverbWet * 100).ToString(CultureInfo.InvariantCulture) + "%";
+
     public string TrimmedText => (TrimmedMs / 1000).ToString("0.00", CultureInfo.InvariantCulture) + " s"
         + (EditLimits.KindFor(TimeSpan.FromMilliseconds(TrimmedMs)) == PlaybackKind.Preloaded ? " · nạp sẵn vào RAM" : " · đọc dần từ ổ đĩa");
 
@@ -253,7 +309,7 @@ public sealed class EditorViewModel : ObservableObject
     {
         // A trim end at the very end is stored as "no trim", so the sound follows the file exactly.
         int? trimEnd = TrimEndMs >= DurationMs - 1 ? null : (int)TrimEndMs;
-        var edit = new EditParams((int)TrimStartMs, trimEnd, (int)FadeInMs, (int)FadeOutMs, (float)GainDb, _original.Edit.Effects);
+        var edit = new EditParams((int)TrimStartMs, trimEnd, (int)FadeInMs, (int)FadeOutMs, (float)GainDb, BuildEffects());
         return _original with
         {
             Name = string.IsNullOrWhiteSpace(Name) ? _original.Name : Name.Trim(),
@@ -262,6 +318,33 @@ public sealed class EditorViewModel : ObservableObject
             Kind = EditLimits.KindFor(TimeSpan.FromMilliseconds(TrimmedMs)),
             Edit = edit,
         };
+    }
+
+    /// <summary>
+    /// With the flag off the stored chain is kept as it is (it is the user's data). With it on,
+    /// pitch and reverb come from the controls and any other effect (from a newer version) is preserved.
+    /// </summary>
+    private IReadOnlyList<EffectConfig> BuildEffects()
+    {
+        if (!EffectsEnabled)
+        {
+            return _original.Edit.Effects;
+        }
+
+        var effects = _original.Edit.Effects
+            .Where(e => e.EffectId is not EffectCatalog.Pitch and not EffectCatalog.Reverb)
+            .ToList();
+        if (PitchSemitones != 0)
+        {
+            effects.Add(EffectCatalog.PitchConfig((float)PitchSemitones));
+        }
+
+        if (ReverbWet > 0)
+        {
+            effects.Add(EffectCatalog.ReverbConfig((float)ReverbRoom, (float)ReverbWet));
+        }
+
+        return effects;
     }
 
     private void Normalize()
@@ -285,6 +368,11 @@ public sealed class EditorViewModel : ObservableObject
     private async Task ExportAsync()
     {
         var edited = BuildEdited();
+        if (!EffectsEnabled)
+        {
+            // The board ignores effects while the flag is off; the exported file must sound the same.
+            edited = edited with { Edit = edited.Edit with { Effects = [] } };
+        }
         var path = _dialogs.PickExportPath(edited.Name + ".wav");
         if (path is null)
         {

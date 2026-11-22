@@ -25,6 +25,8 @@ public sealed class GlobalHotkeysViewModel
             Row(ActionIds.ToggleMic, "Bật/tắt mic luôn mở", "Chuyển giữa chế độ PTT và mic luôn mở."),
             Row(ActionIds.VolumeUp, "Tăng âm lượng sound", "Tăng 10% âm lượng sound (cả game lẫn tai nghe)."),
             Row(ActionIds.VolumeDown, "Giảm âm lượng sound", "Giảm 10% âm lượng sound (cả game lẫn tai nghe)."),
+            Row(ActionIds.PlaylistNext, "Playlist: phát / bài kế", "Cần bật Playlist trong \"Thử nghiệm\"."),
+            Row(ActionIds.PlaylistStop, "Playlist: dừng", "Cần bật Playlist trong \"Thử nghiệm\"."),
         ];
         Refresh();
     }

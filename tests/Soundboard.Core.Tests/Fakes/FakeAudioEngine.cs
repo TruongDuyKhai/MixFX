@@ -29,6 +29,15 @@ internal sealed class FakeAudioEngine : IAudioEngine
 
     public void ApplySettings(AudioSettings settings) => Calls.Add("Apply");
 
+    public void ApplyFeatures(FeatureFlags features) => Calls.Add("Features");
+
+    /// <summary>Simulates the engine reporting that one instance of a sound ended.</summary>
+    public void RaiseStopped(Guid soundId, bool completed)
+    {
+        _playing.Remove(soundId);
+        SoundStopped?.Invoke(this, new SoundStoppedEventArgs(soundId, completed));
+    }
+
     public IReadOnlyList<AudioDeviceInfo> GetDevices(AudioDeviceFlow flow) => [];
 
     public AudioEndpointStatus GetStatus(AudioEndpointRole role) => AudioEndpointStatus.Running;

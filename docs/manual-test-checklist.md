@@ -48,8 +48,17 @@ dotnet test tests/Soundboard.Input.Tests -- xUnit.Explicit=only   # bắn phím 
 - [ ] Gỡ cài, chọn "No" ở câu hỏi xóa dữ liệu → `%AppData%\Soundboard` còn nguyên; cài lại → sound và phím tắt vẫn còn.
 - [ ] Gỡ cài, chọn "Yes" → `%AppData%\Soundboard` bị xóa.
 
+## 6. Tính năng thử nghiệm (P6)
+- [ ] Mở settings của bản cũ (schema v1) → app chạy bình thường, lần lưu đầu ghi v2, `settings.json.bak` là bản v1.
+- [ ] Ducking: phát nhạc dài, giữ PTT → đồng đội nghe nhạc nhỏ đi rõ, nhả → nhạc to lại từ từ.
+- [ ] Hiệu ứng: pitch +5, reverb 40% trong Editor → nghe thử, lưu, bấm ô → nghe đúng như lúc thử; tắt cờ → phát lại bình thường.
+- [ ] Voice changer +5 cung → đồng đội nghe giọng cao hơn, độ trễ chấp nhận được.
+- [ ] Playlist: thêm 2 sound, ▶ → phát lần lượt, tự sang bài kế; "Dừng tất cả" không làm bài kế tự phát.
+- [ ] Web remote: mở link "Mở trang" → bấm nút phát được; sai token → 401; Stream Deck gọi `POST /api/trigger` được.
+
 ## Nhật ký đã test
 
 | Ngày | Phiên bản | Máy | Đã kiểm | Chưa kiểm / ghi chú |
 |---|---|---|---|---|
+| 2026-11-22 | P6 (nhánh `feat/p6-extensions`) | Máy dev, không VB-Cable | Mục 6: migration v1→v2 trên dữ liệu thật (v1 giữ ở `.bak`), bật 5 cờ trong UI, playlist tự chuyển bài, Editor pitch/reverb lưu đúng, web remote: trang 200, trigger phát, sai token 401, Host lạ bị HTTP.sys chặn (400) | Ducking/voice changer chỉ kiểm bằng unit test (chưa nghe qua VB-Cable) |
 | 2026-11-22 | 1.0.0-rc.1 | Máy dev, Windows 11, **không có VB-Cable** | Test hardware tự động: engine → Realtek Digital Output (loopback), mic qua PTT gate (đóng = 0 tuyệt đối), hook F23/F24 kể cả lúc cài lại hook. UI thật: Editor (kéo marker, Normalize, nghe thử), gán phím + cảnh báo, F9 phát sound, Dừng tất cả, stream sound 20 s. Cài/gỡ im lặng per-user: giữ dữ liệu, xóa khóa Run | Mục 0, 1 (qua VB-Cable/Valorant), 2 (trong trận), 5 (máy sạch) |

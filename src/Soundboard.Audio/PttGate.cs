@@ -46,6 +46,9 @@ internal sealed class PttGate : ISampleProvider
 
     public bool IsOpen => AlwaysOn || PushToTalkPressed;
 
+    /// <summary>A mic is running and the gate is open: the user is talking to the game (drives ducking).</summary>
+    public bool IsVoiceOpen => Source is not null && IsOpen;
+
     /// <summary>True while any voice reaches the output (including the fade tail).</summary>
     public bool IsTransmitting => Source is not null && Volatile.Read(ref _gain) > 0f;
 

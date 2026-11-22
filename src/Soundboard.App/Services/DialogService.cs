@@ -41,6 +41,9 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
     public void ShowSetup() =>
         new SetupWindow(services.GetRequiredService<SetupViewModel>()) { Owner = Owner }.ShowDialog();
 
+    public void ShowExperimental() =>
+        new ExperimentalWindow(new ExperimentalViewModel(services.GetRequiredService<ISettingsProvider>(), this)) { Owner = Owner }.ShowDialog();
+
     public void OpenUrl(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose();
 
     public void EditSound(Guid soundId)

@@ -118,6 +118,33 @@
       </StackPanel>
     </Grid>
 
+    <!-- Effects (FeatureFlags.SoundEffects) -->
+    <Grid Margin="0,14,0,0" Visibility="{Binding EffectsEnabled, Converter={StaticResource BoolToVisibility}}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Grid.Column="0" Margin="0,0,12,0">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Right" Text="{Binding PitchText}" />
+          <TextBlock Style="{StaticResource Caption}" Text="Cao độ (pitch)" />
+        </DockPanel>
+        <Slider Minimum="-12" Maximum="{Binding MaxPitch}" SmallChange="0.5" LargeChange="1" Value="{Binding PitchSemitones}" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Margin="0,0,12,0">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Right" Text="{Binding ReverbText}" />
+          <TextBlock Style="{StaticResource Caption}" Text="Reverb (độ vang)" />
+        </DockPanel>
+        <Slider Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" Value="{Binding ReverbWet}" />
+      </StackPanel>
+      <StackPanel Grid.Column="2">
+        <TextBlock Style="{StaticResource Caption}" Text="Kích thước phòng" />
+        <Slider Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.1" Value="{Binding ReverbRoom}" />
+      </StackPanel>
+    </Grid>
+
     <TextBlock Margin="0,10,0,0" Style="{StaticResource Caption}" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
 
     <!-- Actions -->

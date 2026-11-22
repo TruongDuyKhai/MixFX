@@ -6,7 +6,8 @@ namespace Soundboard.Core.Models;
 /// </summary>
 public sealed record AppSettings
 {
-    public const int CurrentSchemaVersion = 1;
+    /// <summary>v2: feature flags, ducking depth, voice changer pitch, playlist and web remote (P6).</summary>
+    public const int CurrentSchemaVersion = 2;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
 
@@ -17,4 +18,9 @@ public sealed record AppSettings
     public IReadOnlyList<Binding> Bindings { get; init; } = [];
 
     public FeatureFlags Features { get; init; } = new();
+
+    /// <summary>Sound ids in play order (<see cref="FeatureFlags.Playlist"/>). Ids of deleted sounds are skipped.</summary>
+    public IReadOnlyList<Guid> Playlist { get; init; } = [];
+
+    public WebRemoteSettings WebRemote { get; init; } = new();
 }

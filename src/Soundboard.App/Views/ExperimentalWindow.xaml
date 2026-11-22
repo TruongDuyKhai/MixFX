@@ -1,0 +1,86 @@
+<Window x:Class="Soundboard.App.Views.ExperimentalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Tính năng thử nghiệm"
+        Icon="/Assets/app.ico"
+        Width="620" SizeToContent="Height" ResizeMode="NoResize" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource ForegroundBrush}">
+  <Window.Resources>
+    <Style x:Key="Card" TargetType="Border">
+      <Setter Property="Margin" Value="0,5" />
+      <Setter Property="Padding" Value="14,10" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+    </Style>
+    <Style x:Key="Hint" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource MutedForegroundBrush}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="28,0,0,0" />
+    </Style>
+  </Window.Resources>
+
+  <StackPanel Margin="20">
+    <TextBlock FontSize="18" FontWeight="SemiBold" Text="Tính năng thử nghiệm" />
+    <TextBlock Margin="0,4,0,10" Foreground="{StaticResource MutedForegroundBrush}" TextWrapping="Wrap"
+               Text="Các tính năng này còn mới và mặc định đều tắt. Bật cái nào thì có hiệu lực ngay." />
+
+    <Border Style="{StaticResource Card}">
+      <StackPanel>
+        <CheckBox FontWeight="SemiBold" Content="Ducking: hạ sound khi bạn đang nói" IsChecked="{Binding Ducking}" />
+        <TextBlock Style="{StaticResource Hint}" Text="Đồng đội nghe rõ giọng bạn hơn tiếng nhạc/sound đang phát." />
+        <DockPanel Margin="28,6,0,0" IsEnabled="{Binding Ducking}">
+          <TextBlock DockPanel.Dock="Right" Width="56" TextAlignment="Right" Text="{Binding DuckingText}" />
+          <Slider Minimum="{Binding MinDuckingDb}" Maximum="0" SmallChange="1" LargeChange="3" IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding DuckingDb}" />
+        </DockPanel>
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource Card}">
+      <StackPanel>
+        <CheckBox FontWeight="SemiBold" Content="Hiệu ứng cho sound (pitch, reverb)" IsChecked="{Binding SoundEffects}" />
+        <TextBlock Style="{StaticResource Hint}" Text="Chỉnh trong cửa sổ Sửa của từng sound." />
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource Card}">
+      <StackPanel>
+        <CheckBox FontWeight="SemiBold" Content="Voice changer: đổi cao độ giọng" IsChecked="{Binding VoiceChanger}" />
+        <TextBlock Style="{StaticResource Hint}" Text="Thêm khoảng 20 ms độ trễ cho giọng. Sound không bị ảnh hưởng." />
+        <DockPanel Margin="28,6,0,0" IsEnabled="{Binding VoiceChanger}">
+          <TextBlock DockPanel.Dock="Right" Width="56" TextAlignment="Right" Text="{Binding VoicePitchText}" />
+          <Slider Minimum="-12" Maximum="{Binding MaxVoicePitch}" SmallChange="1" LargeChange="3" IsSnapToTickEnabled="True" TickFrequency="1" Value="{Binding VoicePitch}" />
+        </DockPanel>
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource Card}">
+      <StackPanel>
+        <CheckBox FontWeight="SemiBold" Content="Playlist" IsChecked="{Binding Playlist}" />
+        <TextBlock Style="{StaticResource Hint}" Text="Chuột phải vào ô sound → &quot;Thêm vào playlist&quot;. Phát lần lượt và lặp lại; gán phím ở &quot;Phím tắt chung&quot;." />
+      </StackPanel>
+    </Border>
+
+    <Border Style="{StaticResource Card}">
+      <StackPanel>
+        <CheckBox FontWeight="SemiBold" Content="Web remote (Stream Deck, script, trình duyệt trên máy này)" IsChecked="{Binding WebRemote}" />
+        <TextBlock Style="{StaticResource Hint}" Text="Chỉ nghe ở localhost, mọi yêu cầu phải có token. Không chia sẻ link này." />
+        <StackPanel Margin="28,8,0,0" IsEnabled="{Binding WebRemote}">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock VerticalAlignment="Center" Text="Cổng" />
+            <TextBox Width="90" Margin="8,0,0,0" Text="{Binding Port, UpdateSourceTrigger=LostFocus}" />
+          </StackPanel>
+          <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding RemoteUrl, Mode=OneWay}" />
+          <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+            <Button Content="Mở trang" Command="{Binding OpenRemoteCommand}" />
+            <Button Margin="8,0,0,0" Content="Tạo token mới" Command="{Binding NewTokenCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Button Margin="0,14,0,0" HorizontalAlignment="Right" Padding="20,6" Content="Đóng" IsCancel="True" IsDefault="True" />
+  </StackPanel>
+</Window>

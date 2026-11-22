@@ -12,4 +12,9 @@ public static class ActionIds
     public const string PttHold = "PttHold";
     public const string VolumeUp = "VolumeUp";
     public const string VolumeDown = "VolumeDown";
+
+    /// <summary>Starts the playlist, or skips to the next track (<c>FeatureFlags.Playlist</c>).</summary>
+    public const string PlaylistNext = "PlaylistNext";
+
+    public const string PlaylistStop = "PlaylistStop";
 }

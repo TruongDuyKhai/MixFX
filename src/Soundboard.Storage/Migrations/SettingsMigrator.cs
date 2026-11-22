@@ -46,7 +46,7 @@ internal sealed class SettingsMigrator
     public int TargetVersion { get; }
 
     /// <summary>The production chain. Register each new <c>MigrateV{n}ToV{n+1}</c> here.</summary>
-    public static SettingsMigrator CreateDefault() => new([], AppSettings.CurrentSchemaVersion);
+    public static SettingsMigrator CreateDefault() => new([new MigrateV1ToV2()], AppSettings.CurrentSchemaVersion);
 
     /// <summary>Upgrades <paramref name="root"/> in place from <paramref name="fromVersion"/> to <see cref="TargetVersion"/>.</summary>
     public void Migrate(JsonObject root, int fromVersion)

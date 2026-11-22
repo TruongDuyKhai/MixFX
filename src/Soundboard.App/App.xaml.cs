@@ -12,7 +12,9 @@ using Soundboard.Audio.Export;
 using Soundboard.Audio.Waveform;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
+using Soundboard.App.WebRemote;
 using Soundboard.Core.Models;
+using Soundboard.Core.Playlist;
 using Soundboard.Input;
 using Soundboard.Storage;
 
@@ -195,6 +197,13 @@ public partial class App : Application
         services.AddSingleton<IAction, PttHoldAction>();
         services.AddSingleton<IAction>(sp => VolumeStepAction.Up(sp.GetRequiredService<ISettingsProvider>()));
         services.AddSingleton<IAction>(sp => VolumeStepAction.Down(sp.GetRequiredService<ISettingsProvider>()));
+
+        // P6, each behind a FeatureFlags switch that defaults to off.
+        services.AddSingleton<PlaylistController>();
+        services.AddSingleton<IAction>(sp => PlaylistAction.Next(sp.GetRequiredService<PlaylistController>()));
+        services.AddSingleton<IAction>(sp => PlaylistAction.Stop(sp.GetRequiredService<PlaylistController>()));
+        services.AddSingleton<WebRemoteRequestHandler>();
+        services.AddSingleton<WebRemoteServer>();
 
         services.AddSingleton<SettingsService>();
         services.AddSingleton<ISettingsProvider>(sp => sp.GetRequiredService<SettingsService>());

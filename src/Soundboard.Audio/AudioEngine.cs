@@ -6,6 +6,7 @@ using Soundboard.Audio.Capture;
 using Soundboard.Audio.Decoding;
 using Soundboard.Audio.Devices;
 using Soundboard.Audio.Dsp;
+using Soundboard.Audio.Effects;
 using Soundboard.Audio.Mixing;
 using Soundboard.Audio.Output;
 using Soundboard.Core.Abstractions;
@@ -43,6 +44,7 @@ public sealed class AudioEngine : IAudioEngine
     private readonly Mixer _gameSounds = new();
     private readonly Mixer _monitorSounds = new();
     private readonly PttGate _gate = new();
+    private readonly VoiceChanger _voiceChanger = new();
     private readonly OutputMix _gameMix;
     private readonly OutputMix _monitorMix;
     private readonly PeakLimiter _gameLimited;
@@ -53,6 +55,7 @@ public sealed class AudioEngine : IAudioEngine
     private readonly AudioEndpointStatus[] _status = new AudioEndpointStatus[Enum.GetValues<AudioEndpointRole>().Length];
 
     private int _playbackMode;
+    private int _soundEffectsEnabled;
     private int _refreshQueued;
     private int _disposed;
 
@@ -71,7 +74,7 @@ public sealed class AudioEngine : IAudioEngine
 
         _library = library;
         _logger = logger;
-        _gameMix = new OutputMix(_gameSounds, _gate);
+        _gameMix = new OutputMix(_gameSounds, _gate, duckingTrigger: _gate);
         _gameLimited = new PeakLimiter(_gameMix, EngineFormat.LimiterCeilingDb, EngineFormat.LimiterReleaseMs);
         _monitorMix = new OutputMix(_monitorSounds, voice: null);
 
@@ -102,9 +105,22 @@ public sealed class AudioEngine : IAudioEngine
         _gameMix.VoiceVolume = settings.MicVolume;
         _monitorMix.SoundVolume = settings.VolumeToMonitor;
         _gate.AlwaysOn = settings.MicMode == MicMode.AlwaysOn;
+        _gameMix.DuckingGain = Decibels.ToGain(Math.Clamp(settings.DuckingDb, AudioSettings.MinDuckingDb, 0f));
+        _voiceChanger.Semitones = settings.VoicePitchSemitones;
         Volatile.Write(ref _playbackMode, (int)settings.PlaybackMode);
 
         Post(() => ApplyDevices(settings));
+    }
+
+    public void ApplyFeatures(FeatureFlags features)
+    {
+        ArgumentNullException.ThrowIfNull(features);
+
+        _gameMix.DuckingEnabled = features.Ducking;
+        _voiceChanger.Enabled = features.VoiceChanger;
+
+        // Read when a sound starts; sounds already playing keep the chain they started with.
+        Volatile.Write(ref _soundEffectsEnabled, features.SoundEffects ? 1 : 0);
     }
 
     public IReadOnlyList<AudioDeviceInfo> GetDevices(AudioDeviceFlow flow)
@@ -343,7 +359,8 @@ public sealed class AudioEngine : IAudioEngine
             var mic = new MicInput(device, OnMicLost);
             mic.Start();
             _mic = mic;
-            _gate.Source = mic.Output;
+            _voiceChanger.Source = mic.Output;
+            _gate.Source = _voiceChanger;
             SetStatus(AudioEndpointRole.Microphone, AudioEndpointStatus.Running);
             _logger.LogInformation("Microphone started: {Device}", name);
         }
@@ -358,6 +375,7 @@ public sealed class AudioEngine : IAudioEngine
     private void StopMic()
     {
         _gate.Source = null;
+        _voiceChanger.Source = null;
         _mic?.Dispose();
         _mic = null;
     }
@@ -601,12 +619,18 @@ public sealed class AudioEngine : IAudioEngine
         var envelope = EditEnvelope.For(sound, cached.Frames);
         return new Playback(
             sound.Id,
-            toGame ? new CachedVoice(sound.Id, cached, envelope) : null,
-            toMonitor ? new CachedVoice(sound.Id, cached, envelope) : null,
+            toGame ? new CachedVoice(sound.Id, cached, envelope, EffectsFor(sound)) : null,
+            toMonitor ? new CachedVoice(sound.Id, cached, envelope, EffectsFor(sound)) : null,
             preview);
     }
 
-    private static Playback CreateStreamedPlayback(
+    /// <summary>A fresh chain per voice (effects keep state), or none while the SoundEffects flag is off.</summary>
+    private IEffect[]? EffectsFor(SoundItem sound) =>
+        Volatile.Read(ref _soundEffectsEnabled) != 0 && sound.Edit.Effects.Count > 0
+            ? EffectChainFactory.Create(sound.Edit.Effects)
+            : null;
+
+    private Playback CreateStreamedPlayback(
         SoundItem sound, string path, TimeSpan start, DecodedAudio decoded, long frames, bool toGame, bool toMonitor, bool preview)
     {
         var envelope = EditEnvelope.For(sound, frames);
@@ -615,10 +639,10 @@ public sealed class AudioEngine : IAudioEngine
         try
         {
             // Each output gets its own decoder so a stalled device cannot hold the other one back.
-            game = toGame ? new StreamedVoice(sound.Id, decoded, frames, envelope) : null;
+            game = toGame ? new StreamedVoice(sound.Id, decoded, frames, envelope, EffectsFor(sound)) : null;
             if (toMonitor)
             {
-                monitor = new StreamedVoice(sound.Id, game is null ? decoded : AudioDecoder.Open(path, start), frames, envelope);
+                monitor = new StreamedVoice(sound.Id, game is null ? decoded : AudioDecoder.Open(path, start), frames, envelope, EffectsFor(sound));
             }
         }
         catch
@@ -696,7 +720,7 @@ public sealed class AudioEngine : IAudioEngine
             // Disposal closes files, so it happens here and never on an audio thread.
             playback.Dispose();
             DecrementPlaying(playback.SoundId);
-            SoundStopped?.Invoke(this, new SoundStoppedEventArgs(playback.SoundId));
+            SoundStopped?.Invoke(this, new SoundStoppedEventArgs(playback.SoundId, playback.Completed));
         }
     }
 
