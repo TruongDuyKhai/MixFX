@@ -1,6 +1,7 @@
 using Soundboard.App.Services;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
+using Soundboard.Core.Downloads;
 using Soundboard.Core.Events;
 using Soundboard.Core.Models;
 
@@ -153,6 +154,8 @@ internal sealed class RecordingDialogs : IDialogService
     {
     }
 
+    public DownloadedAudio? DownloadFromYouTube() => null;
+
     public IReadOnlyList<string> PickAudioFiles() => [];
 
     public string? PickExportPath(string suggestedFileName) => null;
@@ -220,6 +223,8 @@ internal sealed class StubDialogs : IDialogService
     public void EditSound(Guid soundId)
     {
     }
+
+    public DownloadedAudio? DownloadFromYouTube() => null;
 
     public IReadOnlyList<string> PickAudioFiles() => [];
 

@@ -101,6 +101,12 @@ public sealed class ExperimentalViewModel : ObservableObject
         }
     }
 
+    public bool YouTubeImport
+    {
+        get => Current.Features.YouTubeImport;
+        set => UpdateFeatures(f => f with { YouTubeImport = value });
+    }
+
     public string Port
     {
         get => Current.WebRemote.Port.ToString(CultureInfo.InvariantCulture);

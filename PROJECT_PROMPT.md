@@ -72,13 +72,14 @@ Sound/Nhạc ─► [Effect chain] ┘                                        �
 │  ├─ Soundboard.Core/        ← Model, interface, Action. KHÔNG tham chiếu NAudio/WPF/Win32
 │  │  ├─ Models/              (SoundItem, EditParams, Binding, Trigger, AppSettings)
 │  │  ├─ Actions/             (IAction, PlaySoundAction, StopAllAction, ToggleMicAction…)
-│  │  ├─ Abstractions/        (IAudioEngine, IInputService, ISoundLibrary, ISettingsStore, ISettingsProvider, IEffect, IActionDispatcher)
+│  │  ├─ Abstractions/        (IAudioEngine, IInputService, ISoundLibrary, ISettingsStore, ISettingsProvider, IEffect, IActionDispatcher, IAudioDownloader)
+│  │  ├─ Downloads/           (YouTubeUrl, DownloadLimits, kiểu dữ liệu cho IAudioDownloader)
 │  │  ├─ Bindings/            (VirtualKeys, TriggerFormatter, BindingRules: logic phím thuần, không Win32)
 │  │  └─ Events/              (event nội bộ: SoundStarted, SoundStopped, DeviceLost…)
 │  ├─ Soundboard.Audio/       ← NAudio: AudioEngine, Mixer, PttGate, Effects/, Decoding/, Waveform/
 │  ├─ Soundboard.Input/       ← Win32 hook bàn phím/chuột, BindingManager
 │  ├─ Soundboard.Storage/     ← JsonSettingsStore, SoundLibrary, Migrations/
-│  └─ Soundboard.App/         ← WPF: Views/, ViewModels/, Services/, App.xaml (Composition Root)
+│  └─ Soundboard.App/         ← WPF: Views/, ViewModels/, Services/, WebRemote/, YouTube/, App.xaml (Composition Root)
 ├─ tests/
 │  ├─ Soundboard.Core.Tests/
 │  ├─ Soundboard.App.Tests/      (ViewModel, không cần cửa sổ)
@@ -167,12 +168,15 @@ Thêm tính năng mới nghĩa là **thêm class `IAction` mới**, không sửa
 - Log ở `%AppData%\Soundboard\logs\`.
 
 ### 5.8 Tính năng thử nghiệm (P6, sau feature flag — mặc định TẮT)
-Bật/tắt trong cửa sổ "Thử nghiệm"; cờ nằm ở `AppSettings.Features` (schema v2).
+Bật/tắt trong cửa sổ "Thử nghiệm"; cờ nằm ở `AppSettings.Features` (schema v2, thêm `YouTubeImport` ở v3).
 - **Ducking** (`Ducking`): khi giọng đang được truyền (PTT mở), sound gửi vào game bị hạ `Audio.DuckingDb` (mặc định −12 dB, attack 10 ms, release 250 ms). Output B không bị ảnh hưởng.
 - **Hiệu ứng cho sound** (`SoundEffects`): `EditParams.Effects` gồm `pitch` (`semitones`, ±12) và `reverb` (`room`, `wet` 0…1), áp dụng lúc phát qua `IEffect`. Mỗi voice có chain riêng. Cờ tắt thì chain bị bỏ qua (nhưng vẫn giữ trong settings); Export khi cờ tắt không áp dụng hiệu ứng.
 - **Voice changer** (`VoiceChanger`): pitch-shift giọng thật (`Audio.VoicePitchSemitones`) trước cổng PTT; thêm khoảng 20 ms độ trễ.
 - **Playlist** (`Playlist`): `AppSettings.Playlist` là danh sách id sound theo thứ tự, phát lần lượt và lặp lại. Chỉ chuyển bài khi bài hiện tại phát **hết tự nhiên** (`SoundStoppedEventArgs.Completed`). Action `PlaylistNext` / `PlaylistStop`.
 - **Web remote** (`WebRemote`): HTTP chỉ trên `localhost:<port>`, mọi request cần token (tự tạo khi bật lần đầu), kiểm Host chống DNS rebinding. `GET /` (trang nút), `GET /api/sounds`, `POST /api/trigger?action=&target=&phase=press|down|up&mode=`. Đi qua `IActionDispatcher` như mọi nguồn khác.
+- **Tải từ YouTube** (`YouTubeImport`, ADR 0005): nút "Tải từ YouTube" cạnh "+ Thêm sound". Chỉ nhận link **một video** YouTube, tối đa 20 phút, không livestream, chỉ lấy âm thanh `m4a`.
+  - **Công cụ:** app dùng yt-dlp và Deno, chỉ tải sau khi người dùng bấm "Tải công cụ". Nguồn là bản phát hành chính thức trên GitHub; app kiểm SHA-256 rồi lưu ở `%AppData%\Soundboard\tools`, và tự kiểm tra bản mới mỗi ngày khi mở cửa sổ tải.
+  - **Sau khi tải:** file đi qua luồng Import bình thường (copy vào `library`, tên sound = tên video, mở Editor), rồi bản tải tạm bị xóa.
 
 ---
 
@@ -344,3 +348,5 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Watchdog: cài lại hook mỗi 10 s (cài mới → xử lý lời gọi đang chờ → gỡ cũ), lọc sự kiện trùng | Windows gỡ hook chậm mà không báo và không có API để phát hiện; cài lại định kỳ giới hạn thời gian mất phím tắt ở mức ≤ 10 s |
 | 2026-11-22 | Hook chuột `WH_MOUSE_LL` chỉ cài khi có binding chuột hoặc đang ghi nhận phím | Mỗi lần di chuột trong game đều đi qua hook; không cần thì không cài để không thêm độ trễ |
 | 2026-11-22 | Mỗi output có mixer và voice riêng; mic sang Output A qua ring buffer lock-free có trần độ trễ; đọc đĩa cho sound dài chạy ở luồng engine | Hai thiết bị chạy trên hai clock khác nhau nên không chia sẻ buffer; audio callback không được lock, cấp phát hay I/O (mục 7.3.8) |
+| 2026-11-23 | Tải nhạc từ YouTube (cờ `YouTubeImport`, schema **v3**, `MigrateV2ToV3`). Thêm `IAudioDownloader` (interface mới, không đổi interface cũ) (ADR 0005) | Người dùng yêu cầu. Theo luật 7.2.7 tính năng mới phải sau cờ, nên phải thêm khóa vào settings (luật 7.4.13) |
+| 2026-11-23 | **App tự tải yt-dlp (Unlicense) và Deno (MIT) lúc chạy** từ GitHub chính thức, kiểm SHA-256, không đóng gói kèm. Không thêm package NuGet; chỉ lấy âm thanh m4a nên không cần ffmpeg (ADR 0005) | Người dùng chọn cách này thay cho tự cài. yt-dlp phải cập nhật thường xuyên vì YouTube hay đổi; bản đóng gói kèm sẽ nhanh hỏng. ffmpeg (LGPL/GPL) không thuộc danh sách license của mục 3 |

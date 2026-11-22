@@ -14,6 +14,13 @@ Soundboard is distributed together with the following open-source components. Th
 
 VB-Audio Virtual Cable is **not** included: it is installed separately from the official VB-Audio website and is subject to its own licence.
 
+The experimental "Tải từ YouTube" feature downloads two tools at run time, only after the user agrees, from their official GitHub releases. They are **not** distributed with Soundboard and keep their own licences:
+
+| Tool | Licence | Source |
+|---|---|---|
+| yt-dlp | The Unlicense (public domain) | https://github.com/yt-dlp/yt-dlp |
+| Deno | MIT | https://github.com/denoland/deno |
+
 ## MIT License
 
 Applies to every component marked MIT above, with the copyright line shown in the table.

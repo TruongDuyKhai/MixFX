@@ -71,10 +71,12 @@
             </StackPanel>
           </Border>
           <Button Margin="8,0,0,0" Content="+ Thêm sound" Style="{StaticResource AccentButtonStyle}" Command="{Binding ImportCommand}" />
+          <Button Margin="8,0,0,0" Content="Tải từ YouTube" Command="{Binding DownloadFromYouTubeCommand}"
+                  Visibility="{Binding YouTubeImportEnabled, Converter={StaticResource BoolToVisibility}}" />
           <Button Margin="8,0,0,0" Content="⟳" ToolTip="Làm mới danh sách thiết bị" Command="{Binding RefreshDevicesCommand}" />
           <Button Margin="8,0,0,0" Content="Phím tắt chung" Command="{Binding OpenHotkeysCommand}" />
           <Button Margin="8,0,0,0" Content="Hướng dẫn" Command="{Binding OpenSetupCommand}" />
-          <Button Margin="8,0,0,0" Content="Thử nghiệm" ToolTip="Tính năng thử nghiệm: ducking, hiệu ứng, voice changer, playlist, web remote" Command="{Binding OpenExperimentalCommand}" />
+          <Button Margin="8,0,0,0" Content="Thử nghiệm" ToolTip="Tính năng thử nghiệm: ducking, hiệu ứng, voice changer, playlist, web remote, tải từ YouTube" Command="{Binding OpenExperimentalCommand}" />
         </StackPanel>
       </Grid>
     </Border>

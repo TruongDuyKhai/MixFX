@@ -20,4 +20,7 @@ public sealed record FeatureFlags
 
     /// <summary>Local HTTP API and web page to trigger actions (Stream Deck, scripts, a browser on this PC).</summary>
     public bool WebRemote { get; init; }
+
+    /// <summary>Adds sounds from a YouTube link: the app fetches the audio with yt-dlp, which it downloads itself.</summary>
+    public bool YouTubeImport { get; init; }
 }

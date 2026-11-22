@@ -55,10 +55,17 @@ dotnet test tests/Soundboard.Input.Tests -- xUnit.Explicit=only   # bắn phím 
 - [ ] Voice changer +5 cung → đồng đội nghe giọng cao hơn, độ trễ chấp nhận được.
 - [ ] Playlist: thêm 2 sound, ▶ → phát lần lượt, tự sang bài kế; "Dừng tất cả" không làm bài kế tự phát.
 - [ ] Web remote: mở link "Mở trang" → bấm nút phát được; sai token → 401; Stream Deck gọi `POST /api/trigger` được.
+- [ ] Settings v2 (bản 1.1.0) → mở bản mới, lần lưu đầu ghi v3 có `"youTubeImport": false`, `.bak` là bản v2.
+- [ ] Tải từ YouTube: bật cờ → có nút "Tải từ YouTube".
+  - Lần đầu: app hiện hộp hỏi. Bấm "Tải công cụ" thì thấy tiến trình tải yt-dlp rồi Deno, và `%AppData%\Soundboard\tools` có `yt-dlp.exe`, `deno.exe`, `tools.json`.
+  - Dán link một bài hát → thanh tiến trình chạy, cửa sổ tự đóng, sound mới mang tên video, Editor mở ra. Bấm ô sound → đồng đội nghe được.
+  - Link video dài hơn 20 phút → báo "quá giới hạn 20 phút". Link playlist hoặc trang khác → báo link không hợp lệ.
+  - Bấm Hủy hoặc đóng cửa sổ giữa chừng → không còn `yt-dlp.exe`/`deno.exe` trong Task Manager, thư mục `downloads` trống.
 
 ## Nhật ký đã test
 
 | Ngày | Phiên bản | Máy | Đã kiểm | Chưa kiểm / ghi chú |
 |---|---|---|---|---|
+| 2026-11-23 | Tải từ YouTube (nhánh `feat/youtube-import`) | Máy dev | Test tự động gọi GitHub và YouTube thật: tải và kiểm SHA-256 yt-dlp 2026.10.26 cùng Deno v2.9.8, tải video 19 s ra m4a giải mã được, yt-dlp không cảnh báo về JavaScript runtime, hủy giữa chừng thì tắt hẳn tiến trình và xóa thư mục tạm | Chưa bấm thử cửa sổ trong app: bản 1.1.0 đang chạy dùng chung `%AppData%\Soundboard`, chạy bản dev sẽ chuyển settings của bạn sang v3 |
 | 2026-11-22 | P6 (nhánh `feat/p6-extensions`) | Máy dev, không VB-Cable | Mục 6: migration v1→v2 trên dữ liệu thật (v1 giữ ở `.bak`), bật 5 cờ trong UI, playlist tự chuyển bài, Editor pitch/reverb lưu đúng, web remote: trang 200, trigger phát, sai token 401, Host lạ bị HTTP.sys chặn (400) | Ducking/voice changer chỉ kiểm bằng unit test (chưa nghe qua VB-Cable) |
 | 2026-11-22 | 1.0.0-rc.1 | Máy dev, Windows 11, **không có VB-Cable** | Test hardware tự động: engine → Realtek Digital Output (loopback), mic qua PTT gate (đóng = 0 tuyệt đối), hook F23/F24 kể cả lúc cài lại hook. UI thật: Editor (kéo marker, Normalize, nghe thử), gán phím + cảnh báo, F9 phát sound, Dừng tất cả, stream sound 20 s. Cài/gỡ im lặng per-user: giữ dữ liệu, xóa khóa Run | Mục 0, 1 (qua VB-Cable/Valorant), 2 (trong trận), 5 (máy sạch) |

@@ -13,6 +13,7 @@ using Soundboard.Audio.Waveform;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
 using Soundboard.App.WebRemote;
+using Soundboard.App.YouTube;
 using Soundboard.Core.Models;
 using Soundboard.Core.Playlist;
 using Soundboard.Input;
@@ -204,6 +205,12 @@ public partial class App : Application
         services.AddSingleton<IAction>(sp => PlaylistAction.Stop(sp.GetRequiredService<PlaylistController>()));
         services.AddSingleton<WebRemoteRequestHandler>();
         services.AddSingleton<WebRemoteServer>();
+        services.AddSingleton(sp => new DownloadTools(
+            sp.GetRequiredService<StoragePaths>(),
+            DownloadTools.CreateHttpClient(),
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<DownloadTools>>()));
+        services.AddSingleton<IAudioDownloader, YtDlpDownloader>();
 
         services.AddSingleton<SettingsService>();
         services.AddSingleton<ISettingsProvider>(sp => sp.GetRequiredService<SettingsService>());
