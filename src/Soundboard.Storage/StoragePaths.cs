@@ -9,6 +9,7 @@ public sealed class StoragePaths
     private const string BackupSuffix = ".bak";
     private const string TempSuffix = ".tmp";
     private const string LogsFolderName = "logs";
+    private const string LibraryFolderName = "library";
 
     /// <param name="rootDirectory">Folder holding settings, logs and the library. Tests pass a temp folder.</param>
     public StoragePaths(string rootDirectory)
@@ -26,6 +27,9 @@ public sealed class StoragePaths
     public string SettingsTempFile => SettingsFile + TempSuffix;
 
     public string LogsDirectory => Path.Combine(RootDirectory, LogsFolderName);
+
+    /// <summary>The app's own copies of imported sounds (§5.3).</summary>
+    public string LibraryDirectory => Path.Combine(RootDirectory, LibraryFolderName);
 
     /// <summary><c>%AppData%\Soundboard</c> for the current Windows user.</summary>
     public static StoragePaths ForCurrentUser()

@@ -6,8 +6,10 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Soundboard.App.Services;
 using Soundboard.App.ViewModels;
+using Soundboard.Audio;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
+using Soundboard.Core.Models;
 using Soundboard.Storage;
 
 namespace Soundboard.App;
@@ -43,6 +45,8 @@ public partial class App : Application
 
             var settings = _host.Services.GetRequiredService<SettingsService>();
             var loadResult = await settings.LoadAsync();
+
+            StartAudio(_host.Services, settings.Current);
 
             var viewModel = _host.Services.GetRequiredService<MainViewModel>();
             viewModel.ApplySettingsLoadResult(loadResult);
@@ -91,6 +95,26 @@ public partial class App : Application
         }
     }
 
+    private static void StartAudio(IServiceProvider services, AppSettings settings)
+    {
+        var engine = services.GetRequiredService<IAudioEngine>();
+        engine.ApplySettings(settings.Audio);
+        _ = PreloadSoundsAsync(engine, settings.Sounds);
+    }
+
+    private static async Task PreloadSoundsAsync(IAudioEngine engine, IReadOnlyList<SoundItem> sounds)
+    {
+        try
+        {
+            await engine.PreloadAsync(sounds).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Preloading is an optimisation: sounds still decode on first play.
+            Log.Warning(ex, "Preloading sounds failed");
+        }
+    }
+
     private static void SaveSettingsOnExit(SettingsService settings)
     {
         if (!settings.CanSave)
@@ -127,6 +151,8 @@ public partial class App : Application
         services.AddSingleton(paths);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
+        services.AddSingleton<ISoundLibrary, SoundLibrary>();
+        services.AddSingleton<IAudioEngine, AudioEngine>();
         services.AddSingleton<IActionDispatcher, ActionDispatcher>();
 
         services.AddSingleton<SettingsService>();

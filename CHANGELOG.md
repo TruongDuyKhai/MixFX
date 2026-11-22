@@ -5,6 +5,17 @@
 ## [Unreleased]
 
 ### Added
+- **P1 — Audio.** `AudioEngine` (NAudio, WASAPI shared mode) theo sơ đồ mục 2:
+  - Mic → `PttGate` (fade 10 ms, chế độ `AlwaysOn`) → trộn với sound → `PeakLimiter` (trần −1 dBFS) → Output A. Sound → Output B, không có giọng.
+  - Định dạng nội bộ 48 kHz float stereo. Tự đổi tần số mẫu và số kênh theo mix format của từng thiết bị. Mic mono được nhân đôi thành stereo.
+  - Sound ≤ 15 s sau khi cắt được nạp sẵn vào RAM. Sound dài được đọc trước từ đĩa ở luồng engine, audio callback không làm I/O.
+  - Trim, fade in/out, gain, volume được áp dụng lúc phát. Dừng sound có fade 5 ms để không bị tiếng "bụp". Hỗ trợ chế độ `Overlap` / `Exclusive`.
+  - Mất thiết bị thì phát `DeviceLost`, không crash, và tự mở lại khi thiết bị quay về. Output A khi chưa cấu hình chỉ tự chọn "CABLE Input", không bao giờ chọn loa.
+- Core: `IAudioEngine`, `ISoundLibrary`, event `SoundStarted` / `SoundStopped` / `SoundFailed` / `DeviceLost`, cùng các model thiết bị.
+- Storage: `SoundLibrary`, chặn tên file thư viện chứa đường dẫn (path traversal).
+- Test: 59 unit test cho Audio, gồm test chứng minh audio callback không cấp phát bộ nhớ, và 2 test explicit chạy trên thiết bị thật (loopback).
+
+### Added (P0)
 - **P0 — Khung.** Solution `Soundboard.sln` gồm 5 project (`Core`, `Audio`, `Input`, `Storage`, `App`) và 2 project test, đúng sơ đồ phụ thuộc ở mục 4.1. `Audio` và `Input` mới chỉ có `.csproj`.
 - `Directory.Build.props` (version `0.1.0`, Nullable, TreatWarningsAsErrors), `Directory.Packages.props` (ghim version mọi package), `global.json` (ghim SDK 10.0.404).
 - Core: các model ở mục 6; `AppSettings` (schema v1) với `AudioSettings` (thiết bị, 3 mức âm lượng, `MicMode`, `PlaybackMode`) và `FeatureFlags`; `IAction`, `IActionDispatcher`, `ActionDispatcher`; `ISettingsStore`.
