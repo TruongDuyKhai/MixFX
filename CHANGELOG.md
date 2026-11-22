@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-22
+
 ### Added
 - **Cơ chế phát hành.**
   - `release.ps1 <version> [-Push]`: kiểm SemVer, repo sạch, đang ở `main` mới nhất; ghi version vào `Directory.Build.props`; chuyển mục Unreleased của CHANGELOG thành `[<version>] - <ngày>`; build, test, commit, rồi tạo tag `v<version>`.
