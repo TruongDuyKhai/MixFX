@@ -6,9 +6,11 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Soundboard.App.Services;
 using Soundboard.App.ViewModels;
+using Soundboard.App.Views;
 using Soundboard.Audio;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
+using Soundboard.Core.Models;
 using Soundboard.Input;
 using Soundboard.Storage;
 
@@ -26,12 +28,22 @@ public partial class App : Application
 
     private static readonly TimeSpan HostStopTimeout = TimeSpan.FromSeconds(5);
 
+    private SingleInstance? _singleInstance;
     private IHost? _host;
+    private TrayIcon? _tray;
 
     // async void is forced by the WPF override; everything runs inside try so no exception escapes unlogged.
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _singleInstance = SingleInstance.TryAcquire();
+        if (_singleInstance is null)
+        {
+            // Another instance is already running and has been asked to show itself.
+            Shutdown();
+            return;
+        }
 
         try
         {
@@ -42,23 +54,38 @@ public partial class App : Application
 
             _host = BuildHost(paths);
             await _host.StartAsync();
+            var services = _host.Services;
 
-            var settings = _host.Services.GetRequiredService<SettingsService>();
+            var settings = services.GetRequiredService<SettingsService>();
             var loadResult = await settings.LoadAsync();
 
-            _host.Services.GetRequiredService<SettingsSync>().Start();
-            StartHotkeys(_host.Services.GetRequiredService<IInputService>());
+            services.GetRequiredService<SettingsSync>().Start();
+            StartHotkeys(services.GetRequiredService<IInputService>());
 
-            var viewModel = _host.Services.GetRequiredService<MainViewModel>();
+            var viewModel = services.GetRequiredService<MainViewModel>();
             viewModel.ApplySettingsLoadResult(loadResult);
+            viewModel.Start();
 
-            var window = _host.Services.GetRequiredService<Views.MainWindow>();
+            var window = services.GetRequiredService<MainWindow>();
             MainWindow = window;
-            window.Show();
+            _tray = new TrayIcon(window.ShowFromTray, viewModel.StopAll, Shutdown);
+            _singleInstance.ListenForActivation(() => Dispatcher.BeginInvoke(window.ShowFromTray));
+
+            var startHidden = e.Args.Contains(StartupRegistration.MinimizedArgument, StringComparer.OrdinalIgnoreCase);
+            if (!startHidden)
+            {
+                window.Show();
+            }
 
             if (viewModel.SettingsWarning is { } warning)
             {
+                window.ShowFromTray();
                 MessageBox.Show(window, warning, "Soundboard", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            if (loadResult.Status == SettingsLoadStatus.FirstRun && !startHidden)
+            {
+                services.GetRequiredService<IDialogService>().ShowSetup();
             }
         }
         catch (Exception ex)
@@ -75,10 +102,13 @@ public partial class App : Application
     {
         try
         {
+            _tray?.Dispose();
             if (_host is not null)
             {
+                _host.Services.GetRequiredService<MainViewModel>().Dispose();
                 SaveSettingsOnExit(_host.Services.GetRequiredService<SettingsService>());
 
+                // Disposing the host disposes the engine and the hooks: WASAPI stops and hooks are removed (§7.3.11).
                 // Task.Run: blocking the UI thread on an await that wants to resume on it would deadlock.
                 Task.Run(() => _host.StopAsync(HostStopTimeout)).GetAwaiter().GetResult();
                 _host.Dispose();
@@ -90,6 +120,7 @@ public partial class App : Application
         }
         finally
         {
+            _singleInstance?.Dispose();
             Log.Information("Soundboard exiting with code {ExitCode}", e.ApplicationExitCode);
             Log.CloseAndFlush();
             base.OnExit(e);
@@ -164,8 +195,13 @@ public partial class App : Application
         services.AddSingleton<SettingsService>();
         services.AddSingleton<ISettingsProvider>(sp => sp.GetRequiredService<SettingsService>());
         services.AddSingleton<SettingsSync>();
+        services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<IStartupRegistration, StartupRegistration>();
+
         services.AddSingleton<MainViewModel>();
-        services.AddSingleton<Views.MainWindow>();
+        services.AddSingleton<MainWindow>();
+        services.AddTransient<GlobalHotkeysViewModel>();
+        services.AddTransient<SetupViewModel>();
 
         return builder.Build();
     }

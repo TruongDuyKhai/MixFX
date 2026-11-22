@@ -144,6 +144,11 @@ public sealed class RealDeviceTests : IDisposable
     private sealed class FixedLibrary(string path) : ISoundLibrary
     {
         public string GetFilePath(SoundItem sound) => path;
+
+        public Task<string> DuplicateAsync(string libraryFile, Guid newSoundId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public void Delete(string libraryFile) => throw new NotSupportedException();
     }
 
     private sealed class LoopbackRecorder : IDisposable

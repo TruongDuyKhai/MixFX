@@ -1,0 +1,48 @@
+<Window x:Class="Soundboard.App.Views.BindingEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}"
+        Icon="/Assets/app.ico"
+        Width="480" SizeToContent="Height" ResizeMode="NoResize" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource ForegroundBrush}">
+  <StackPanel Margin="20">
+    <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" />
+
+    <Border Margin="0,16,0,0" Padding="16" CornerRadius="8" Background="{StaticResource SurfaceBrush}">
+      <StackPanel>
+        <TextBlock HorizontalAlignment="Center" FontSize="22" FontWeight="SemiBold" Text="{Binding KeyText}" />
+        <TextBlock Margin="0,6,0,0" HorizontalAlignment="Center" Foreground="{StaticResource MutedForegroundBrush}"
+                   Text="Nhấn phím hoặc nút chuột bên… (Esc để giữ phím cũ)"
+                   Visibility="{Binding IsCapturing, Converter={StaticResource BoolToVisibility}}" />
+      </StackPanel>
+    </Border>
+
+    <ItemsControl Margin="0,10,0,0" ItemsSource="{Binding Warnings}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <TextBlock Margin="0,2" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap">
+            <Run Text="⚠" />
+            <Run Text="{Binding Mode=OneWay}" />
+          </TextBlock>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <StackPanel Margin="0,12,0,0" Visibility="{Binding AllowModeChoice, Converter={StaticResource BoolToVisibility}}">
+      <TextBlock Foreground="{StaticResource MutedForegroundBrush}" Text="Kiểu kích hoạt" />
+      <ComboBox Margin="0,4,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding Modes}" DisplayMemberPath="Label"
+                SelectedValuePath="Mode" SelectedValue="{Binding Mode}" />
+    </StackPanel>
+
+    <CheckBox Margin="0,12,0,0" IsChecked="{Binding PassThrough}" Content="Game vẫn nhận phím này (khuyên dùng)" />
+
+    <DockPanel Margin="0,20,0,0" LastChildFill="False">
+      <Button DockPanel.Dock="Left" Content="Gỡ phím" Command="{Binding RemoveCommand}" />
+      <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Hủy" Command="{Binding CancelCommand}" />
+      <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Lưu" Command="{Binding SaveCommand}" IsDefault="True" />
+      <Button DockPanel.Dock="Right" Content="Ghi lại phím" Command="{Binding CaptureCommand}" />
+    </DockPanel>
+  </StackPanel>
+</Window>

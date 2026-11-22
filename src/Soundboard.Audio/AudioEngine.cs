@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using NAudio.CoreAudioApi;
 using Soundboard.Audio.Capture;
@@ -108,8 +109,17 @@ public sealed class AudioEngine : IAudioEngine
 
     public IReadOnlyList<AudioDeviceInfo> GetDevices(AudioDeviceFlow flow)
     {
-        using var enumerator = new MMDeviceEnumerator();
-        return DeviceCatalog.List(enumerator, flow);
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            return DeviceCatalog.List(enumerator, flow);
+        }
+        catch (COMException ex)
+        {
+            // A broken audio service must not crash the device pickers; they just show no devices.
+            _logger.LogError(ex, "Could not list {Flow} devices", flow);
+            return [];
+        }
     }
 
     public AudioEndpointStatus GetStatus(AudioEndpointRole role)

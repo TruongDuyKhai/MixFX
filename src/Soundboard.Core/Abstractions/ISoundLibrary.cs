@@ -10,4 +10,10 @@ public interface ISoundLibrary
 {
     /// <summary>Absolute path of the library copy behind <paramref name="sound"/>.</summary>
     string GetFilePath(SoundItem sound);
+
+    /// <summary>Copies a library file for a duplicated sound; returns the new library file name.</summary>
+    Task<string> DuplicateAsync(string libraryFile, Guid newSoundId, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes a library copy (and anything cached for it). Never touches files outside the library.</summary>
+    void Delete(string libraryFile);
 }
