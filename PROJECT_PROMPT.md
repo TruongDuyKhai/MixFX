@@ -325,7 +325,7 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Project dùng giấy phép **MIT** (`LICENSE`) | Repo public; người dùng chọn MIT. Hợp với mọi thư viện đang dùng (MIT/Apache-2.0) |
 | 2026-11-22 | Installer: `PrivilegesRequired=lowest` + `PrivilegesRequiredOverridesAllowed=dialog` (`{autopf}` = `%LOCALAPPDATA%\Programs` hoặc Program Files) | Cài cho riêng user không cần Admin, nhưng vẫn chọn được "all users" |
 | 2026-11-22 | Installer: giao diện wizard tiếng Anh, các câu của Soundboard bằng tiếng Việt | Inno Setup 6 không có bản dịch tiếng Việt chính thức; không tải bản dịch không chính thức |
-| 2026-11-22 | "Xóa cả dữ liệu" khi gỡ cài là câu hỏi Yes/No, mặc định No (thay cho ô tick) | Trình gỡ của Inno không có trang tùy chọn; câu hỏi mặc định "No" vẫn đúng tinh thần mục 10.2 (giữ dữ liệu trừ khi người dùng chọn xóa) |
+| 2026-11-22 | "Xóa cả dữ liệu" khi gỡ cài là **ô tick** (mặc định không tick) trên một form riêng của trình gỡ (thay cho câu hỏi Yes/No lúc đầu) | Đúng nguyên văn mục 10.2; gỡ im lặng không hiện form và không bao giờ xóa dữ liệu |
 | 2026-11-22 | Version `1.0.0-rc.1`, chưa gắn tag `v1.0.0` | Tag chỉ gắn sau khi người dùng xác nhận các tiêu chí cần game/thiết bị thật (mục 11) |
 | 2026-11-22 | Thêm `IAudioEngine.Preview` / `StopPreview` **không** kèm default implementation; thêm `ISoundLibrary.ImportAsync` / `GetPeaksPath`, `IWaveformService`, `IAudioExporter` | Default "không làm gì" cho Preview sẽ âm thầm sai, còn default "Play" thì phát ra game. Mỗi interface chỉ có một implementation, đã cập nhật hết kèm test |
 | 2026-11-22 | Export ra WAV 48 kHz 16-bit stereo, cắt ngọn (clip) khi vượt 0 dBFS | 16-bit là định dạng mọi app/game đều nhận; clip đỡ tệ hơn để giá trị tràn thành tiếng "bụp" |

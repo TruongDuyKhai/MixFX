@@ -20,7 +20,7 @@
     - Có shortcut Start Menu, tùy chọn shortcut Desktop, tùy chọn khởi động cùng Windows.
     - Kiểm tra VB-Cable và mời mở trang tải chính thức; không đóng gói VB-Cable.
     - Phát hiện app đang chạy qua `AppMutex`.
-    - Gỡ cài giữ `%AppData%\Soundboard`; chỉ xóa khi người dùng chọn Yes, và không bao giờ xóa khi gỡ im lặng.
+    - Gỡ cài giữ `%AppData%\Soundboard`; chỉ xóa khi người dùng tick ô "Xóa cả dữ liệu" (mặc định không tick), và không bao giờ xóa khi gỡ im lặng.
   - `THIRD-PARTY-NOTICES.md` và `licenses/Apache-2.0.txt` được cài kèm app; thêm `README.md`.
 - Giấy phép MIT cho project (`LICENSE`, cũng được cài kèm app dưới tên `LICENSE.txt`).
 - **P4 — Import + Editor.**
