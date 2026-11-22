@@ -44,14 +44,14 @@ Sound/Nhạc ─► [Effect chain] ┘                                        �
 
 | Hạng mục | Lựa chọn |
 |---|---|
-| Ngôn ngữ / runtime | C# 12, **.NET 8** (LTS), `win-x64` |
+| Ngôn ngữ / runtime | C# 14, **.NET 10** (LTS, hỗ trợ đến 11/2028), `win-x64` — xem ADR 0001 |
 | UI | **WPF** + **MVVM** (`CommunityToolkit.Mvvm`) |
 | DI / Hosting | `Microsoft.Extensions.Hosting` + `Microsoft.Extensions.DependencyInjection` |
 | Audio | **NAudio** (WASAPI capture/out, mixing). `NAudio.Vorbis` cho .ogg |
 | Định dạng file | wav, mp3, ogg, flac (mp3/flac/aac qua `MediaFoundationReader`) |
 | Lưu trữ | JSON (`System.Text.Json`) |
 | Logging | `Microsoft.Extensions.Logging` + Serilog ghi file (rolling) |
-| Test | xUnit + FluentAssertions |
+| Test | xUnit (v3) + FluentAssertions **7.x** (ghim, bản 8+ đổi license — xem ADR 0002) |
 | Đóng gói | `dotnet publish` self-contained + **Inno Setup 6** ra file `Setup.exe` |
 
 **Chỉ được thêm package NuGet mới khi:** có lý do rõ ràng, đã xem license (chỉ chấp nhận MIT/BSD/Apache/MS-PL), và đã ghi vào mục 12.
@@ -65,6 +65,8 @@ Sound/Nhạc ─► [Effect chain] ┘                                        �
 ├─ PROJECT_PROMPT.md          ← file này
 ├─ CHANGELOG.md
 ├─ Directory.Build.props      ← version, nullable, warnings-as-errors dùng chung
+├─ Directory.Packages.props   ← version mọi package NuGet (Central Package Management)
+├─ global.json                ← ghim .NET SDK
 ├─ Soundboard.sln
 ├─ src/
 │  ├─ Soundboard.Core/        ← Model, interface, Action. KHÔNG tham chiếu NAudio/WPF/Win32
@@ -310,3 +312,6 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Low-level hook thay vì RegisterHotKey | Không nuốt phím của game, hỗ trợ Hold/PTT |
 | 2026-11-22 | Chỉnh sửa không phá file (EditParams) | Sửa lại được nhiều lần, không mất chất lượng, an toàn cho file người dùng |
 | 2026-11-22 | Inno Setup cho installer | Đơn giản, miễn phí, ra một file Setup.exe |
+| 2026-11-22 | Đổi .NET 8 → **.NET 10 LTS**, C# 14 (ADR 0001) | .NET 8 hết hỗ trợ ngày 10/11/2026, trước khi project có code; .NET 10 LTS hỗ trợ đến 11/2028 |
+| 2026-11-22 | Ghim **FluentAssertions 7.2.2** (ADR 0002) | Từ 8.0 đổi sang license Xceed, không thuộc MIT/BSD/Apache/MS-PL; 7.x vẫn Apache-2.0 |
+| 2026-11-22 | Package P0: `CommunityToolkit.Mvvm` (MIT), `Microsoft.Extensions.Hosting` + `Microsoft.Extensions.Logging.Abstractions` (MIT), `Serilog.Extensions.Hosting` + `Serilog.Sinks.File` (Apache-2.0), `xunit.v3` + `xunit.runner.visualstudio` (Apache-2.0), `Microsoft.NET.Test.Sdk` (MIT) | Đúng stack mục 3; license đã kiểm. Version ghim trong `Directory.Packages.props` |

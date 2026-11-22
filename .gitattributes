@@ -1,0 +1,9 @@
+* text=auto
+
+*.cs     text diff=csharp
+*.xaml   text
+*.csproj text
+*.props  text
+*.sln    text eol=crlf
+*.iss    text eol=crlf
+*.ps1    text eol=crlf

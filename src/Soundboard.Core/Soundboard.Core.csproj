@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Core must stay BCL-only: no NAudio, WPF, Win32 or other project references (PROJECT_PROMPT.md §4.1). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Soundboard.Core</RootNamespace>
+  </PropertyGroup>
+</Project>
