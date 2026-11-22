@@ -85,15 +85,8 @@ public sealed class MixerTests
         }
 
         var buffer = new float[1_440 * 2];
-        mixer.Read(buffer, 0, buffer.Length);
 
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var i = 0; i < 100; i++)
-        {
-            mixer.Read(buffer, 0, buffer.Length);
-        }
-
-        (GC.GetAllocatedBytesForCurrentThread() - before).Should().Be(0);
+        Allocations.InSteadyState(() => mixer.Read(buffer, 0, buffer.Length)).Should().Be(0);
     }
 
     [Fact]
@@ -105,15 +98,8 @@ public sealed class MixerTests
         var mix = new OutputMix(mixer, gate) { SoundVolume = 0.8f, VoiceVolume = 1.2f };
         var limiter = new Soundboard.Audio.Dsp.PeakLimiter(mix, -1f, 100f);
         var buffer = new float[1_440 * 2];
-        limiter.Read(buffer, 0, buffer.Length);
 
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var i = 0; i < 100; i++)
-        {
-            limiter.Read(buffer, 0, buffer.Length);
-        }
-
-        (GC.GetAllocatedBytesForCurrentThread() - before).Should().Be(0);
+        Allocations.InSteadyState(() => limiter.Read(buffer, 0, buffer.Length)).Should().Be(0);
     }
 
     private static CachedVoice Voice(int frames, float value) =>
