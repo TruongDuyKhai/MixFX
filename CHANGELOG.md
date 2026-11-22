@@ -5,6 +5,19 @@
 ## [Unreleased]
 
 ### Added
+- **P2 — Input.** Phím tắt toàn cục bằng `WH_KEYBOARD_LL` + `WH_MOUSE_LL`, không dùng `RegisterHotKey`.
+  - Hook chạy trên luồng riêng có độ ưu tiên cao. Callback chỉ tra bảng binding rồi đẩy sự kiện vào `Channel`; action chạy ở luồng khác.
+  - Hỗ trợ phím đơn, tổ hợp Ctrl/Alt/Shift/Win, và Mouse 4/5/giữa. Bỏ qua auto-repeat. Nhả phím vẫn được tính kể cả khi đã thả modifier trước.
+  - Tự phục hồi khi một lần nhả phím bị mất (Win+L, UAC). Nhờ vậy không bị "kẹt" modifier.
+  - `PassThrough`: khi bằng `false`, cả lúc nhấn, lặp và nhả đều bị ẩn khỏi game.
+  - Chế độ "nhấn để ghi nhận" phím (Esc để hủy), trong lúc đó binding không chạy.
+  - Hook chuột chỉ được cài khi thật sự cần.
+- Các action `PlaySound` (4 chế độ `Press` / `Toggle` / `Hold` / `Restart`), `StopAll`, `ToggleMic`, `PttHold`, `VolumeUp`, `VolumeDown`.
+- `BindingRules` cảnh báo phím game phổ biến và binding trùng. `TriggerFormatter` hiển thị tên phím như "Ctrl+Shift+Numpad 1" hay "Mouse 4".
+- `ISettingsProvider`: thay đổi settings là nguyên tử và tự lưu sau 500 ms. `SettingsSync` đẩy thay đổi tới engine và hook.
+- Test: 18 test cho bộ so khớp binding, 41 test cho action/quy tắc, và 2 test explicit với hook thật.
+
+### Added (P1)
 - **P1 — Audio.** `AudioEngine` (NAudio, WASAPI shared mode) theo sơ đồ mục 2:
   - Mic → `PttGate` (fade 10 ms, chế độ `AlwaysOn`) → trộn với sound → `PeakLimiter` (trần −1 dBFS) → Output A. Sound → Output B, không có giọng.
   - Định dạng nội bộ 48 kHz float stereo. Tự đổi tần số mẫu và số kênh theo mix format của từng thiết bị. Mic mono được nhân đôi thành stereo.

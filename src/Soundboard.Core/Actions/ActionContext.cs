@@ -12,4 +12,7 @@ public sealed record ActionContext
     public required Guid? TargetId { get; init; }
 
     public required TriggerPhase Phase { get; init; }
+
+    /// <summary>How the binding that fired wants Down/Up interpreted. UI clicks without a binding use Press.</summary>
+    public TriggerMode Mode { get; init; } = TriggerMode.Press;
 }

@@ -6,6 +6,17 @@ public sealed record AudioSettings
     /// <summary>Unity gain: the signal passes unchanged.</summary>
     public const float DefaultVolume = 1f;
 
+    public const float MinVolume = 0f;
+
+    /// <summary>Sounds are not boosted above their own level; Output A's limiter would only squash them.</summary>
+    public const float MaxSoundVolume = 1f;
+
+    /// <summary>Quiet microphones often need a boost.</summary>
+    public const float MaxMicVolume = 2f;
+
+    /// <summary>Change per VolumeUp / VolumeDown press.</summary>
+    public const float VolumeStep = 0.1f;
+
     // Devices are stored by WASAPI endpoint id rather than display name because names change
     // with driver updates and Windows language. null means "not chosen yet".
     public string? MicDeviceId { get; init; }
