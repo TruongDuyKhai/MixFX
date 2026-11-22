@@ -36,7 +36,10 @@ public sealed class ActionDispatcher : IActionDispatcher
         _actions = byId.ToFrozenDictionary(StringComparer.Ordinal);
     }
 
-    public DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase)
+    public DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase) =>
+        Dispatch(actionId, targetId, phase, TriggerMode.Press);
+
+    public DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase, TriggerMode mode)
     {
         ArgumentNullException.ThrowIfNull(actionId);
 
@@ -45,7 +48,7 @@ public sealed class ActionDispatcher : IActionDispatcher
             return DispatchResult.UnknownAction;
         }
 
-        action.Execute(new ActionContext { TargetId = targetId, Phase = phase });
+        action.Execute(new ActionContext { TargetId = targetId, Phase = phase, Mode = mode });
         return DispatchResult.Executed;
     }
 }

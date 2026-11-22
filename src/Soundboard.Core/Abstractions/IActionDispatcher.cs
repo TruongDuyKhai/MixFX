@@ -11,4 +11,11 @@ public interface IActionDispatcher
     /// propagate to the caller so they are never silently lost.
     /// </summary>
     DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase);
+
+    /// <summary>
+    /// Same as the three-argument overload, carrying the binding's <see cref="TriggerMode"/> to the action.
+    /// Added in P2; the default implementation keeps older implementations compiling (they treat every trigger as Press).
+    /// </summary>
+    DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase, TriggerMode mode) =>
+        Dispatch(actionId, targetId, phase);
 }

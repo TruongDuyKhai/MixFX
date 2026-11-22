@@ -9,7 +9,7 @@ using Soundboard.App.ViewModels;
 using Soundboard.Audio;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
-using Soundboard.Core.Models;
+using Soundboard.Input;
 using Soundboard.Storage;
 
 namespace Soundboard.App;
@@ -46,7 +46,8 @@ public partial class App : Application
             var settings = _host.Services.GetRequiredService<SettingsService>();
             var loadResult = await settings.LoadAsync();
 
-            StartAudio(_host.Services, settings.Current);
+            _host.Services.GetRequiredService<SettingsSync>().Start();
+            StartHotkeys(_host.Services.GetRequiredService<IInputService>());
 
             var viewModel = _host.Services.GetRequiredService<MainViewModel>();
             viewModel.ApplySettingsLoadResult(loadResult);
@@ -95,23 +96,19 @@ public partial class App : Application
         }
     }
 
-    private static void StartAudio(IServiceProvider services, AppSettings settings)
-    {
-        var engine = services.GetRequiredService<IAudioEngine>();
-        engine.ApplySettings(settings.Audio);
-        _ = PreloadSoundsAsync(engine, settings.Sounds);
-    }
-
-    private static async Task PreloadSoundsAsync(IAudioEngine engine, IReadOnlyList<SoundItem> sounds)
+    private static void StartHotkeys(IInputService input)
     {
         try
         {
-            await engine.PreloadAsync(sounds).ConfigureAwait(false);
+            input.Start();
         }
         catch (Exception ex)
         {
-            // Preloading is an optimisation: sounds still decode on first play.
-            Log.Warning(ex, "Preloading sounds failed");
+            // The board still works by clicking; only global hotkeys are lost.
+            Log.Error(ex, "Could not install keyboard/mouse hooks");
+            MessageBox.Show(
+                $"Không cài được phím tắt toàn cục, chỉ dùng được bằng cách bấm chuột:\n{ex.Message}",
+                "Soundboard", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -153,9 +150,20 @@ public partial class App : Application
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
         services.AddSingleton<ISoundLibrary, SoundLibrary>();
         services.AddSingleton<IAudioEngine, AudioEngine>();
+        services.AddSingleton<IInputService, InputService>();
         services.AddSingleton<IActionDispatcher, ActionDispatcher>();
 
+        // Every trigger source reaches these through IActionDispatcher (§4.2).
+        services.AddSingleton<IAction, PlaySoundAction>();
+        services.AddSingleton<IAction, StopAllAction>();
+        services.AddSingleton<IAction, ToggleMicAction>();
+        services.AddSingleton<IAction, PttHoldAction>();
+        services.AddSingleton<IAction>(sp => VolumeStepAction.Up(sp.GetRequiredService<ISettingsProvider>()));
+        services.AddSingleton<IAction>(sp => VolumeStepAction.Down(sp.GetRequiredService<ISettingsProvider>()));
+
         services.AddSingleton<SettingsService>();
+        services.AddSingleton<ISettingsProvider>(sp => sp.GetRequiredService<SettingsService>());
+        services.AddSingleton<SettingsSync>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<Views.MainWindow>();
 
