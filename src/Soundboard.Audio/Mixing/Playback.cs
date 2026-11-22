@@ -1,0 +1,43 @@
+using Soundboard.Core.Models;
+
+namespace Soundboard.Audio.Mixing;
+
+/// <summary>One triggered sound: its voice on the game output and/or on the monitor output.</summary>
+internal sealed class Playback(Guid soundId, Voice? gameVoice, Voice? monitorVoice) : IDisposable
+{
+    public Guid SoundId { get; } = soundId;
+
+    public Voice? GameVoice { get; } = gameVoice;
+
+    public Voice? MonitorVoice { get; } = monitorVoice;
+
+    public bool IsFinished => (GameVoice?.IsFinished ?? true) && (MonitorVoice?.IsFinished ?? true);
+
+    public PlaybackProgress Progress
+    {
+        get
+        {
+            var voice = GameVoice is { IsFinished: false } ? GameVoice : MonitorVoice ?? GameVoice!;
+            return new PlaybackProgress(SoundId, EngineFormat.FramesToTime(voice.Position), EngineFormat.FramesToTime(voice.TotalFrames));
+        }
+    }
+
+    public void RequestStop()
+    {
+        GameVoice?.RequestStop();
+        MonitorVoice?.RequestStop();
+    }
+
+    /// <summary>Engine thread: reads ahead from disk for streamed voices.</summary>
+    public void Pump()
+    {
+        (GameVoice as StreamedVoice)?.Pump();
+        (MonitorVoice as StreamedVoice)?.Pump();
+    }
+
+    public void Dispose()
+    {
+        GameVoice?.Dispose();
+        MonitorVoice?.Dispose();
+    }
+}
