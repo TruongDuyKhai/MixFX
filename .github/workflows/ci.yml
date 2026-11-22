@@ -1,0 +1,35 @@
+# Keeps `main` always buildable (PROJECT_PROMPT.md §9): build with warnings as errors and run every
+# test that needs no audio hardware (hardware tests are [Fact(Explicit = true)] and skipped here).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build Soundboard.sln -c Release -warnaserror
+
+      - name: Test
+        run: dotnet test Soundboard.sln -c Release --no-build

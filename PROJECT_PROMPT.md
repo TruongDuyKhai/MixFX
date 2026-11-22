@@ -265,8 +265,9 @@ public enum TriggerPhase { Down, Up }
 
 - **SemVer** `MAJOR.MINOR.PATCH`, khai báo **một chỗ duy nhất** trong `Directory.Build.props` (`<Version>`). Installer đọc version từ đây.
 - Commit theo **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `build:`, `chore:`.
-- Nhánh: `main` luôn build được. Làm việc trên `feat/...`, `fix/...`.
+- Nhánh: `main` luôn build được. Làm việc trên `feat/...`, `fix/...`. Workflow **CI** (`.github/workflows/ci.yml`) build + test mọi lần push lên `main` và mọi PR.
 - Mỗi bản phát hành phải gắn tag `vX.Y.Z`.
+- **Phát hành:** ghi thay đổi vào mục `## [Unreleased]` của `CHANGELOG.md` trong lúc làm, rồi chạy `./release.ps1 X.Y.Z -Push`. Script đổi version, chuyển mục Unreleased thành `## [X.Y.Z] - <ngày>`, build + test, commit `chore(release): vX.Y.Z` và tạo tag. Push tag sẽ kích hoạt workflow **Release** (`.github/workflows/release.yml`): kiểm tag khớp `<Version>`, build, test, đóng gói, rồi tạo GitHub Release kèm `Soundboard-Setup-X.Y.Z.exe` + `.sha256` (release notes lấy từ CHANGELOG). Version có hậu tố (`-rc.1`, `-beta.2`) được đăng dạng pre-release. **Không** tự tạo tag hay sửa `<Version>` bằng tay.
 
 ---
 
@@ -328,6 +329,7 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Version `1.0.0-rc.1`, chưa gắn tag `v1.0.0` | Tag chỉ gắn sau khi người dùng xác nhận các tiêu chí cần game/thiết bị thật (mục 11) |
 | 2026-11-22 | Thêm `IAudioEngine.Preview` / `StopPreview` **không** kèm default implementation; thêm `ISoundLibrary.ImportAsync` / `GetPeaksPath`, `IWaveformService`, `IAudioExporter` | Default "không làm gì" cho Preview sẽ âm thầm sai, còn default "Play" thì phát ra game. Mỗi interface chỉ có một implementation, đã cập nhật hết kèm test |
 | 2026-11-22 | Export ra WAV 48 kHz 16-bit stereo, cắt ngọn (clip) khi vượt 0 dBFS | 16-bit là định dạng mọi app/game đều nhận; clip đỡ tệ hơn để giá trị tràn thành tiếng "bụp" |
+| 2026-11-22 | Phát hành qua tag + GitHub Actions (`release.ps1` → tag `vX.Y.Z` → workflow Release); CI cho `main` và PR | Bản cài luôn được build từ đúng commit đã tag, trên máy sạch của GitHub, kèm checksum; người dùng tải ở trang Releases |
 | 2026-11-22 | Watchdog: cài lại hook mỗi 10 s (cài mới → xử lý lời gọi đang chờ → gỡ cũ), lọc sự kiện trùng | Windows gỡ hook chậm mà không báo và không có API để phát hiện; cài lại định kỳ giới hạn thời gian mất phím tắt ở mức ≤ 10 s |
 | 2026-11-22 | Hook chuột `WH_MOUSE_LL` chỉ cài khi có binding chuột hoặc đang ghi nhận phím | Mỗi lần di chuột trong game đều đi qua hook; không cần thì không cài để không thêm độ trễ |
 | 2026-11-22 | Mỗi output có mixer và voice riêng; mic sang Output A qua ring buffer lock-free có trần độ trễ; đọc đĩa cho sound dài chạy ở luồng engine | Hai thiết bị chạy trên hai clock khác nhau nên không chia sẻ buffer; audio callback không được lock, cấp phát hay I/O (mục 7.3.8) |
