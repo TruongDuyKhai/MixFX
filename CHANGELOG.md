@@ -4,18 +4,21 @@
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-11-22
-
 ### Added
 - **P6 — Tính năng thử nghiệm**, mỗi cái sau một feature flag **mặc định tắt**, bật trong cửa sổ "Thử nghiệm":
   - **Ducking:** hạ sound gửi vào game khi bạn đang nói (mặc định −12 dB, chỉnh được).
   - **Hiệu ứng cho sound:** pitch (±12 cung) và reverb, chỉnh trong Editor; áp dụng lúc phát, khi nghe thử và khi export.
   - **Voice changer:** đổi cao độ giọng thật trước cổng PTT.
   - **Playlist:** "Thêm vào playlist" trong menu chuột phải, có nút ▶/■ và phím tắt chung; phát lần lượt, lặp lại, chỉ chuyển bài khi bài hiện tại phát hết.
-  - **Web remote:** trang nút và API HTTP trên `localhost` có token, dùng được với Stream Deck, script hoặc trình duyệt trên cùng máy.
+  - **Web remote:** trang nút và API HTTP trên `localhost` có token, dùng được với Stream Deck, script hoặc trình duyệt trên cùng máy (ADR 0004).
 - Schema settings **v2** với migration từ v1 (test bằng fixture v1); file v1 cũ được giữ làm `.bak` sau lần lưu đầu.
 
+### Changed
 - `SoundStoppedEventArgs` có thêm `Completed` (phát hết tự nhiên hay bị dừng). `IAudioEngine` có thêm `ApplyFeatures`.
+
+## [1.0.0] - 2026-11-22
+
+### Added
 - **Cơ chế phát hành.**
   - `release.ps1 <version> [-Push]`: kiểm SemVer, repo sạch, đang ở `main` mới nhất; ghi version vào `Directory.Build.props`; chuyển mục Unreleased của CHANGELOG thành `[<version>] - <ngày>`; build, test, commit, rồi tạo tag `v<version>`.
   - Workflow **Release**: chạy khi push tag `v*`. Kiểm tag khớp version, build, test, đóng gói installer bằng Inno Setup, rồi tạo GitHub Release kèm `Soundboard-Setup-<version>.exe`, file `.sha256` và release notes lấy từ CHANGELOG. Bản `-rc` / `-beta` được đánh dấu pre-release.
