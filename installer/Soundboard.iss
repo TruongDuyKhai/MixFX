@@ -62,7 +62,10 @@ TaskDesktop=Tạo shortcut trên Desktop
 TaskStartup=Khởi động cùng Windows (chạy ẩn dưới khay hệ thống)
 LaunchApp=Mở Soundboard
 CableMissing=Chưa tìm thấy VB-Audio Virtual Cable.%n%nSoundboard cần micro ảo này để đồng đội nghe được giọng và sound. VB-Cable miễn phí nhưng phải tải và cài riêng từ trang chính thức của VB-Audio, sau đó khởi động lại máy.%n%nMở trang tải VB-Cable ngay bây giờ?
-DeleteData=Xóa luôn dữ liệu của Soundboard (thư viện sound, phím tắt, cài đặt, log)?%n%nChọn "No" để giữ lại, phòng khi bạn cài lại sau này.
+UninstallDataCaption=Gỡ cài đặt Soundboard
+UninstallDataInfo=Thư viện sound, phím tắt và cài đặt của bạn nằm trong %AppData%\Soundboard. Mặc định chúng được giữ lại, để cài lại sau này vẫn còn nguyên.
+UninstallDataCheck=Xóa cả dữ liệu (thư viện sound, phím tắt, cài đặt, log)
+UninstallDataOk=Tiếp tục
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:TaskDesktop}"; Flags: unchecked
@@ -107,18 +110,72 @@ begin
   end;
 end;
 
+var
+  DeleteUserData: Boolean;
+
+{ §10.2: user data is deleted only when the user ticks "Xóa cả dữ liệu"; the box starts unticked. }
+function AskDeleteUserData: Boolean;
+var
+  Form: TSetupForm;
+  Info: TNewStaticText;
+  Check: TNewCheckBox;
+  OkButton: TNewButton;
+begin
+  { Fixed height: nothing on the form can grow vertically. Without a parent form it centers on the screen. }
+  Form := CreateCustomForm(ScaleX(440), ScaleY(150), False, True);
+  try
+    Form.Caption := CustomMessage('UninstallDataCaption');
+
+    Info := TNewStaticText.Create(Form);
+    Info.Parent := Form;
+    Info.AutoSize := False;
+    Info.WordWrap := True;
+    Info.Left := ScaleX(16);
+    Info.Top := ScaleY(14);
+    Info.Width := Form.ClientWidth - ScaleX(32);
+    Info.Height := ScaleY(48);
+    Info.Caption := CustomMessage('UninstallDataInfo');
+
+    Check := TNewCheckBox.Create(Form);
+    Check.Parent := Form;
+    Check.Left := ScaleX(16);
+    Check.Top := ScaleY(70);
+    Check.Width := Form.ClientWidth - ScaleX(32);
+    Check.Height := ScaleY(20);
+    Check.Caption := CustomMessage('UninstallDataCheck');
+    Check.Checked := False;
+
+    OkButton := TNewButton.Create(Form);
+    OkButton.Parent := Form;
+    OkButton.Caption := CustomMessage('UninstallDataOk');
+    OkButton.Width := Form.CalculateButtonWidth([OkButton.Caption]);
+    OkButton.Height := ScaleY(26);
+    OkButton.Left := Form.ClientWidth - OkButton.Width - ScaleX(16);
+    OkButton.Top := Form.ClientHeight - OkButton.Height - ScaleY(14);
+    OkButton.ModalResult := mrOk;
+    OkButton.Default := True;
+
+    Form.ActiveControl := OkButton;
+    Form.ShowModal();
+    Result := Check.Checked;
+  finally
+    Form.Free();
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then
   begin
+    { A silent uninstall never deletes user data. }
+    DeleteUserData := False;
+    if not UninstallSilent then
+      DeleteUserData := AskDeleteUserData();
+
     { The app's own checkbox may have created the startup entry even if the installer task was not chosen. }
     RegDeleteValue(HKCU, '{#RunKey}', '{#AppName}');
   end;
 
-  { User data is kept by default (§10.2): deleted only on an explicit Yes, never during a silent uninstall. }
-  if (CurUninstallStep = usPostUninstall) and not UninstallSilent then
-  begin
-    if MsgBox(CustomMessage('DeleteData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
-      DelTree(ExpandConstant('{userappdata}\{#AppName}'), True, True, True);
-  end;
+  if (CurUninstallStep = usPostUninstall) and DeleteUserData then
+    DelTree(ExpandConstant('{userappdata}\{#AppName}'), True, True, True);
 end;
