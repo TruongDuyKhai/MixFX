@@ -10,13 +10,25 @@ namespace Soundboard.Input.Hooks;
 /// Owns the WH_KEYBOARD_LL / WH_MOUSE_LL hooks and the message loop they need. Windows calls the
 /// hooks on this thread; if a callback takes longer than LowLevelHooksTimeout the hook is silently
 /// removed, so callbacks only call <c>handler</c> (which must be fast) and return (§7.3.9).
+/// Because that removal cannot be detected, the hooks are re-armed periodically (watchdog): a hook
+/// lost to a stall comes back within <see cref="RearmIntervalMs"/> instead of never.
 /// One instance per process: the static callbacks reach it through <see cref="s_active"/>.
 /// </summary>
 internal sealed unsafe class LowLevelHooks : IDisposable
 {
+    /// <summary>Longest time hotkeys can stay dead after Windows drops a hook.</summary>
+    public const uint RearmIntervalMs = 10_000;
+
     private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(2);
 
     private static LowLevelHooks? s_active;
+
+    // Hook thread only (static because the callbacks are static).
+    private static DuplicateEventFilter s_keyboardDuplicates;
+    private static DuplicateEventFilter s_mouseDuplicates;
+
+    private int _rearmCount;
+    private nuint _rearmTimer;
 
     private readonly Func<RawInputEvent, bool> _handler;
     private readonly ManualResetEventSlim _started = new();
@@ -70,6 +82,18 @@ internal sealed unsafe class LowLevelHooks : IDisposable
         }
     }
 
+    /// <summary>How many times the hooks have been re-armed; for tests and diagnostics.</summary>
+    public int RearmCount => Volatile.Read(ref _rearmCount);
+
+    /// <summary>Re-arms immediately instead of waiting for the timer (tests).</summary>
+    public void RequestRearm()
+    {
+        if (_threadId != 0)
+        {
+            PostThreadMessageW(_threadId, WmAppRearm, 0, 0);
+        }
+    }
+
     public void Dispose()
     {
         if (_thread is null)
@@ -84,17 +108,24 @@ internal sealed unsafe class LowLevelHooks : IDisposable
         _started.Dispose();
     }
 
+    /// <summary>Keyboard callbacks received since start; for tests and diagnostics.</summary>
+    public static int KeyboardCallbackCount => Volatile.Read(ref s_keyboardCallbacks);
+
+    private static int s_keyboardCallbacks;
+
     [UnmanagedCallersOnly]
     private static nint KeyboardProc(int code, nint wParam, nint lParam)
     {
+        Interlocked.Increment(ref s_keyboardCallbacks);
         var hooks = Volatile.Read(ref s_active);
         if (code >= 0 && hooks is not null)
         {
             var message = (int)wParam;
             var isDown = message is WmKeyDown or WmSysKeyDown;
-            if (isDown || message is WmKeyUp or WmSysKeyUp)
+            var data = (KbdLlHookStruct*)lParam;
+            if ((isDown || message is WmKeyUp or WmSysKeyUp)
+                && !s_keyboardDuplicates.IsDuplicate(message, data->VkCode, data->Time))
             {
-                var data = (KbdLlHookStruct*)lParam;
                 if (hooks._handler(new RawInputEvent(InputDevice.Keyboard, (int)data->VkCode, isDown)))
                 {
                     return 1;
@@ -125,7 +156,10 @@ internal sealed unsafe class LowLevelHooks : IDisposable
                 _ => (0, false),
             };
 
-            if (button != 0 && hooks._handler(new RawInputEvent(InputDevice.Mouse, button, isDown)))
+            var data = (MsLlHookStruct*)lParam;
+            if (button != 0
+                && !s_mouseDuplicates.IsDuplicate(message, data->MouseData, data->Time)
+                && hooks._handler(new RawInputEvent(InputDevice.Mouse, button, isDown)))
             {
                 return 1;
             }
@@ -158,14 +192,28 @@ internal sealed unsafe class LowLevelHooks : IDisposable
         }
 
         UpdateMouseHook(module);
+
+        // Thread timer (no window): WM_TIMER arrives in this thread's own queue.
+        _rearmTimer = SetTimer(0, 0, RearmIntervalMs, 0);
         _started.Set();
 
         while (GetMessageW(out var message, 0, 0, 0) > 0)
         {
-            if (message.Message == WmAppUpdateMouseHook)
+            switch (message.Message)
             {
-                UpdateMouseHook(module);
+                case WmAppUpdateMouseHook:
+                    UpdateMouseHook(module);
+                    break;
+                case WmTimer when message.WParam == _rearmTimer:
+                case WmAppRearm:
+                    Rearm(module);
+                    break;
             }
+        }
+
+        if (_rearmTimer != 0)
+        {
+            KillTimer(0, _rearmTimer);
         }
 
         if (_mouseHook != 0)
@@ -174,6 +222,37 @@ internal sealed unsafe class LowLevelHooks : IDisposable
         }
 
         UnhookWindowsHookEx(_keyboardHook);
+    }
+
+    /// <summary>
+    /// Installs fresh hooks before removing the old ones, so there is never a moment without a hook.
+    /// Hook calls reach this thread as sent messages: an event that came in before the new hook
+    /// existed is queued for the *old* hook and would be lost when it is removed (a lost key-up would
+    /// leave push-to-talk stuck open). So pending calls are drained first, while the old hook is still
+    /// installed. An event that then passes both hooks is absorbed by <see cref="DuplicateEventFilter"/>.
+    /// </summary>
+    private void Rearm(nint module)
+    {
+        var keyboard = SetWindowsHookExW(WhKeyboardLl, (nint)(delegate* unmanaged<int, nint, nint, nint>)&KeyboardProc, module, 0);
+        var mouse = _mouseHook != 0
+            ? SetWindowsHookExW(WhMouseLl, (nint)(delegate* unmanaged<int, nint, nint, nint>)&MouseProc, module, 0)
+            : 0;
+
+        PeekMessageW(out _, 0, 0, 0, PmNoRemove | PmQsSendMessage);
+
+        if (keyboard != 0)
+        {
+            UnhookWindowsHookEx(_keyboardHook);
+            _keyboardHook = keyboard;
+        }
+
+        if (mouse != 0)
+        {
+            UnhookWindowsHookEx(_mouseHook);
+            _mouseHook = mouse;
+        }
+
+        Interlocked.Increment(ref _rearmCount);
     }
 
     private void UpdateMouseHook(nint module)

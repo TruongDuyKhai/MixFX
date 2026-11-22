@@ -26,10 +26,18 @@ internal static partial class NativeMethods
     /// <summary>Private message telling the hook thread to (un)install the mouse hook.</summary>
     public const int WmAppUpdateMouseHook = 0x8000 + 1;
 
+    /// <summary>Private message asking the hook thread to re-arm its hooks now (used by tests).</summary>
+    public const int WmAppRearm = 0x8000 + 2;
+
+    public const int WmTimer = 0x0113;
+
     public const int XButton1 = 1;
     public const int XButton2 = 2;
 
     public const uint PmNoRemove = 0;
+
+    /// <summary>PM_QS_SENDMESSAGE: PeekMessage only processes pending sent messages (which is how hook calls arrive).</summary>
+    public const uint PmQsSendMessage = 0x0040 << 16;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct KbdLlHookStruct
@@ -87,6 +95,13 @@ internal static partial class NativeMethods
 
     [LibraryImport("user32.dll")]
     public static partial short GetAsyncKeyState(int vKey);
+
+    [LibraryImport("user32.dll")]
+    public static partial nuint SetTimer(nint hWnd, nuint nIdEvent, uint uElapse, nint lpTimerFunc);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool KillTimer(nint hWnd, nuint uIdEvent);
 
     [LibraryImport("kernel32.dll")]
     public static partial uint GetCurrentThreadId();
