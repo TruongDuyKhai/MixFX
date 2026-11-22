@@ -2,9 +2,13 @@
 
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), version theo [SemVer](https://semver.org/lang/vi/).
 
-## [Unreleased] — 1.0.0-rc.1
+## [Unreleased]
 
 ### Added
+- **Cơ chế phát hành.**
+  - `release.ps1 <version> [-Push]`: kiểm SemVer, repo sạch, đang ở `main` mới nhất; ghi version vào `Directory.Build.props`; chuyển mục Unreleased của CHANGELOG thành `[<version>] - <ngày>`; build, test, commit, rồi tạo tag `v<version>`.
+  - Workflow **Release**: chạy khi push tag `v*`. Kiểm tag khớp version, build, test, đóng gói installer bằng Inno Setup, rồi tạo GitHub Release kèm `Soundboard-Setup-<version>.exe`, file `.sha256` và release notes lấy từ CHANGELOG. Bản `-rc` / `-beta` được đánh dấu pre-release.
+  - Workflow **CI**: build (warnings as errors) và test cho mỗi lần push lên `main` hoặc mở PR.
 - **Watchdog cho phím tắt.** Windows có thể tự gỡ low-level hook mà không báo khi callback bị chậm (máy quá tải). Hook giờ được cài lại mỗi 10 giây:
   - Hook mới được cài trước, các lời gọi hook còn chờ được xử lý hết, rồi mới gỡ hook cũ. Nhờ vậy không có khoảng trống và không mất phím nào, kể cả phím nhả của PTT.
   - Bộ lọc `DuplicateEventFilter` bỏ sự kiện đi qua cả hai hook trong lúc chồng nhau.

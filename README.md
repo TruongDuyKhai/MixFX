@@ -1,5 +1,8 @@
 # Soundboard
 
+[![CI](https://github.com/TruongDuyKhai/MixFX/actions/workflows/ci.yml/badge.svg)](https://github.com/TruongDuyKhai/MixFX/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/TruongDuyKhai/MixFX?include_prereleases)](https://github.com/TruongDuyKhai/MixFX/releases)
+
 Ứng dụng Windows phát sound effect và nhạc **qua micro** khi chơi game (chủ yếu Valorant): đồng đội nghe được cả giọng thật của bạn lẫn âm thanh bạn phát.
 
 ```
@@ -30,7 +33,7 @@ App **không** can thiệp vào game: không inject, không đọc/ghi bộ nh�
 ## Cài đặt và dùng
 
 1. Cài **VB-Audio Virtual Cable** từ trang chính thức, rồi khởi động lại máy.
-2. Chạy `Soundboard-Setup-<version>.exe`. Mặc định cài cho riêng bạn, không cần quyền Administrator.
+2. Tải `Soundboard-Setup-<version>.exe` ở trang [Releases](https://github.com/TruongDuyKhai/MixFX/releases) rồi chạy. Mặc định cài cho riêng bạn, không cần quyền Administrator.
 3. Trong Soundboard:
    - **Micro thật:** micro bạn dùng.
    - **Output A:** "Tự động" (CABLE Input).
@@ -62,6 +65,16 @@ dotnet test tests/Soundboard.Audio.Tests -- xUnit.Explicit=only
 # Hook bàn phím toàn cục thật (bắn phím F23/F24)
 dotnet test tests/Soundboard.Input.Tests -- xUnit.Explicit=only
 ```
+
+### Phát hành phiên bản mới
+
+Ghi thay đổi vào mục `## [Unreleased]` của [CHANGELOG.md](CHANGELOG.md), rồi chạy:
+
+```powershell
+./release.ps1 1.1.0 -Push        # hoặc 1.2.0-rc.1 cho bản pre-release
+```
+
+Script đổi version trong `Directory.Build.props`, đánh ngày cho CHANGELOG, build + test, commit và gắn tag `v1.1.0`. GitHub Actions sau đó tự build installer và đăng lên trang [Releases](https://github.com/TruongDuyKhai/MixFX/releases) kèm checksum SHA-256.
 
 Kiến trúc, quy tắc code và lộ trình nằm trong [PROJECT_PROMPT.md](PROJECT_PROMPT.md). Lịch sử thay đổi xem [CHANGELOG.md](CHANGELOG.md); thư viện bên thứ ba xem [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

@@ -24,9 +24,7 @@ $artifacts = Join-Path $root 'artifacts'
 $publishDir = Join-Path $artifacts 'publish'
 
 # Version: single source of truth.
-[xml]$props = Get-Content (Join-Path $root 'Directory.Build.props')
-$version = ($props.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ } | Select-Object -First 1)
-if (-not $version) { throw 'No <Version> found in Directory.Build.props.' }
+$version = & (Join-Path $root 'scripts\Get-Version.ps1')
 
 # Windows file versions must be numeric (1.2.3.0); drop any SemVer pre-release/build suffix for them.
 $numericVersion = ($version -split '[-+]')[0]
