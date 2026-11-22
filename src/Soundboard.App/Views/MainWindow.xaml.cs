@@ -44,6 +44,21 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void OnDrop(object sender, DragEventArgs e)
+    {
+        // async void: WPF event handler. ImportAsync reports its own errors to the user.
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
+        {
+            await _viewModel.ImportAsync(files);
+        }
+    }
+
     private void OnTileMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: SoundTileViewModel tile } element)

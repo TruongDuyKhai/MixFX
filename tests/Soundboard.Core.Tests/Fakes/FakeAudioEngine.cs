@@ -55,6 +55,10 @@ internal sealed class FakeAudioEngine : IAudioEngine
 
     public IReadOnlyList<PlaybackProgress> GetActivePlaybacks() => [];
 
+    public void Preview(SoundItem sound) => Calls.Add($"Preview {sound.Name}");
+
+    public void StopPreview() => Calls.Add("StopPreview");
+
     public void SetPushToTalk(bool pressed) => PushToTalk = pressed;
 
     public Task PreloadAsync(IReadOnlyList<SoundItem> sounds, CancellationToken cancellationToken = default) => Task.CompletedTask;

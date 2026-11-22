@@ -31,11 +31,20 @@ public sealed class SingleInstance : IDisposable
             return new SingleInstance(mutex, activate);
         }
 
+        // Windows only lets the process the user just launched take the foreground; hand that right
+        // to the running instance, otherwise its window would just flash in the taskbar.
+        _ = AllowSetForegroundWindow(AnyProcess);
         activate.Set();
         activate.Dispose();
         mutex.Dispose();
         return null;
     }
+
+    private const int AnyProcess = -1;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool AllowSetForegroundWindow(int processId);
 
     /// <summary><paramref name="onActivate"/> runs on a thread-pool thread whenever another launch is attempted.</summary>
     public void ListenForActivation(Action onActivate)

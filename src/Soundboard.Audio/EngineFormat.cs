@@ -29,7 +29,7 @@ internal static class EngineFormat
     public const float LimiterReleaseMs = 100f;
 
     /// <summary>Sounds at most this long after trimming are decoded into RAM; longer ones stream (§5.1).</summary>
-    public static readonly TimeSpan PreloadMaxDuration = TimeSpan.FromSeconds(15);
+    public static readonly TimeSpan PreloadMaxDuration = Core.Models.EditLimits.PreloadMaxDuration;
 
     public const int MaxVoicesPerOutput = 64;
 

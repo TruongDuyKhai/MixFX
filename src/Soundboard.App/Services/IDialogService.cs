@@ -15,4 +15,13 @@ public interface IDialogService
     void ShowSetup();
 
     void OpenUrl(string url);
+
+    /// <summary>Opens the editor for a sound already on the board.</summary>
+    void EditSound(Guid soundId);
+
+    /// <summary>Audio files chosen for import; empty when cancelled.</summary>
+    IReadOnlyList<string> PickAudioFiles();
+
+    /// <summary>Where to export a WAV, or null when cancelled.</summary>
+    string? PickExportPath(string suggestedFileName);
 }

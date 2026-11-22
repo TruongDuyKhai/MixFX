@@ -70,6 +70,7 @@
               <TextBlock Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold" Text="MIC" />
             </StackPanel>
           </Border>
+          <Button Margin="8,0,0,0" Content="+ Thêm sound" Style="{StaticResource AccentButtonStyle}" Command="{Binding ImportCommand}" />
           <Button Margin="8,0,0,0" Content="⟳" ToolTip="Làm mới danh sách thiết bị" Command="{Binding RefreshDevicesCommand}" />
           <Button Margin="8,0,0,0" Content="Phím tắt chung" Command="{Binding OpenHotkeysCommand}" />
           <Button Margin="8,0,0,0" Content="Hướng dẫn" Command="{Binding OpenSetupCommand}" />
@@ -147,8 +148,8 @@
       </Grid>
     </Border>
 
-    <!-- Sound grid -->
-    <Grid>
+    <!-- Sound grid; dropping audio files anywhere here imports them -->
+    <Grid AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop" Background="Transparent">
       <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
         <ItemsControl ItemsSource="{Binding Tiles}">
           <ItemsControl.ItemsPanel>
@@ -163,6 +164,7 @@
                       MouseLeftButtonDown="OnTileMouseDown" MouseLeftButtonUp="OnTileMouseUp" LostMouseCapture="OnTileLostCapture">
                 <Border.ContextMenu>
                   <ContextMenu>
+                    <MenuItem Header="Sửa" Command="{Binding EditCommand}" />
                     <MenuItem Header="Đổi phím" Command="{Binding ChangeKeyCommand}" />
                     <MenuItem Header="Nhân bản" Command="{Binding DuplicateCommand}" />
                     <Separator />
@@ -189,6 +191,9 @@
       <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                   Visibility="{Binding HasNoSounds, Converter={StaticResource BoolToVisibility}}">
         <TextBlock HorizontalAlignment="Center" FontSize="18" Foreground="{StaticResource MutedForegroundBrush}" Text="Chưa có sound nào" />
+        <TextBlock Margin="0,6,0,12" HorizontalAlignment="Center" Foreground="{StaticResource MutedForegroundBrush}"
+                   Text="Kéo thả file âm thanh (wav, mp3, ogg, flac…) vào đây, hoặc:" />
+        <Button HorizontalAlignment="Center" Padding="16,8" Content="+ Thêm sound" Style="{StaticResource AccentButtonStyle}" Command="{Binding ImportCommand}" />
       </StackPanel>
     </Grid>
   </DockPanel>

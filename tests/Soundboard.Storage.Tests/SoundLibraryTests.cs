@@ -84,6 +84,47 @@ public sealed class SoundLibraryTests : IDisposable
         File.Exists(outside).Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Import_CopiesIntoLibraryAndNeverTouchesTheOriginal()
+    {
+        var original = Path.Combine(_dir.Path, "My Horn.MP3");
+        File.WriteAllBytes(original, [4, 5, 6]);
+        var writtenAt = File.GetLastWriteTimeUtc(original);
+        var id = Guid.NewGuid();
+
+        var name = await _library.ImportAsync(original, id, Ct);
+
+        name.Should().Be($"{id}.mp3");
+        File.ReadAllBytes(Path.Combine(_paths.LibraryDirectory, name)).Should().Equal(4, 5, 6);
+        File.ReadAllBytes(original).Should().Equal(4, 5, 6);
+        File.GetLastWriteTimeUtc(original).Should().Be(writtenAt);
+    }
+
+    [Fact]
+    public async Task Import_UnsupportedType_IsRejectedWithoutCopying()
+    {
+        var original = Path.Combine(_dir.Path, "notes.txt");
+        File.WriteAllText(original, "hi");
+
+        var act = () => _library.ImportAsync(original, Guid.NewGuid(), Ct);
+
+        await act.Should().ThrowAsync<NotSupportedException>();
+        Directory.Exists(_paths.LibraryDirectory).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Delete_AlsoRemovesTheWaveformCache()
+    {
+        var file = WriteLibraryFile($"{Guid.NewGuid()}.wav", [1]);
+        var peaks = _library.GetPeaksPath(file);
+        File.WriteAllBytes(peaks, [2]);
+
+        _library.Delete(file);
+
+        peaks.Should().EndWith(".peaks");
+        File.Exists(peaks).Should().BeFalse();
+    }
+
     private string WriteLibraryFile(string name, byte[] content)
     {
         Directory.CreateDirectory(_paths.LibraryDirectory);

@@ -81,6 +81,7 @@ Sound/Nhạc ─► [Effect chain] ┘                                        �
 │  └─ Soundboard.App/         ← WPF: Views/, ViewModels/, Services/, App.xaml (Composition Root)
 ├─ tests/
 │  ├─ Soundboard.Core.Tests/
+│  ├─ Soundboard.App.Tests/      (ViewModel, không cần cửa sổ)
 │  ├─ Soundboard.Audio.Tests/
 │  ├─ Soundboard.Input.Tests/
 │  └─ Soundboard.Storage.Tests/
@@ -320,5 +321,7 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Người dùng yêu cầu làm liền P1→P5. Tiêu chí cần game/thiết bị thật (Valorant, Discord, VB-Cable, máy sạch) do người dùng xác nhận sau; phần tự kiểm được thì kiểm bằng test thiết bị thật `[Fact(Explicit = true)]` | Máy dev chưa cài VB-Cable và không chạy được Valorant; vẫn giữ nguyên các tiêu chí ở mục 11 |
 | 2026-11-22 | Package P1: `NAudio.Core` + `NAudio.Wasapi` 2.2.1, `NAudio.Vorbis` 1.5.0 (kéo theo `NVorbis`), đều MIT | Đúng stack mục 3. Ở lại NAudio 2.2.x: bản 3.x đổi API, chưa được kiểm chứng ở đây |
 | 2026-11-22 | Thêm overload `IActionDispatcher.Dispatch(..., TriggerMode)` (có default implementation) và `ActionContext.Mode` | Action cần biết TriggerMode của binding; chỉ thêm member, không đổi hợp đồng cũ (luật 7.2.5) |
+| 2026-11-22 | Thêm `IAudioEngine.Preview` / `StopPreview` **không** kèm default implementation; thêm `ISoundLibrary.ImportAsync` / `GetPeaksPath`, `IWaveformService`, `IAudioExporter` | Default "không làm gì" cho Preview sẽ âm thầm sai, còn default "Play" thì phát ra game. Mỗi interface chỉ có một implementation, đã cập nhật hết kèm test |
+| 2026-11-22 | Export ra WAV 48 kHz 16-bit stereo, cắt ngọn (clip) khi vượt 0 dBFS | 16-bit là định dạng mọi app/game đều nhận; clip đỡ tệ hơn để giá trị tràn thành tiếng "bụp" |
 | 2026-11-22 | Hook chuột `WH_MOUSE_LL` chỉ cài khi có binding chuột hoặc đang ghi nhận phím | Mỗi lần di chuột trong game đều đi qua hook; không cần thì không cài để không thêm độ trễ |
 | 2026-11-22 | Mỗi output có mixer và voice riêng; mic sang Output A qua ring buffer lock-free có trần độ trễ; đọc đĩa cho sound dài chạy ở luồng engine | Hai thiết bị chạy trên hai clock khác nhau nên không chia sẻ buffer; audio callback không được lock, cấp phát hay I/O (mục 7.3.8) |

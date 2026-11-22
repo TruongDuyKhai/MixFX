@@ -8,6 +8,8 @@ using Soundboard.App.Services;
 using Soundboard.App.ViewModels;
 using Soundboard.App.Views;
 using Soundboard.Audio;
+using Soundboard.Audio.Export;
+using Soundboard.Audio.Waveform;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
 using Soundboard.Core.Models;
@@ -105,10 +107,10 @@ public partial class App : Application
             _tray?.Dispose();
             if (_host is not null)
             {
-                _host.Services.GetRequiredService<MainViewModel>().Dispose();
                 SaveSettingsOnExit(_host.Services.GetRequiredService<SettingsService>());
 
-                // Disposing the host disposes the engine and the hooks: WASAPI stops and hooks are removed (§7.3.11).
+                // Disposing the host disposes every singleton it created (view model, engine, hooks):
+                // WASAPI stops and hooks are removed (§7.3.11).
                 // Task.Run: blocking the UI thread on an await that wants to resume on it would deadlock.
                 Task.Run(() => _host.StopAsync(HostStopTimeout)).GetAwaiter().GetResult();
                 _host.Dispose();
@@ -181,6 +183,8 @@ public partial class App : Application
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
         services.AddSingleton<ISoundLibrary, SoundLibrary>();
         services.AddSingleton<IAudioEngine, AudioEngine>();
+        services.AddSingleton<IWaveformService, WaveformService>();
+        services.AddSingleton<IAudioExporter, AudioExporter>();
         services.AddSingleton<IInputService, InputService>();
         services.AddSingleton<IActionDispatcher, ActionDispatcher>();
 

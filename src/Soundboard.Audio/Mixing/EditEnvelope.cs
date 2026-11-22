@@ -25,6 +25,13 @@ internal readonly struct EditEnvelope
         EngineFormat.MsToFrames(sound.Edit.FadeOutMs),
         totalFrames);
 
+    /// <summary>Edits only (trim/fade/gain), without the per-sound mixing volume: what "Export" bakes into the file.</summary>
+    public static EditEnvelope ForExport(EditParams edit, long totalFrames) => new(
+        Decibels.ToGain(edit.GainDb),
+        EngineFormat.MsToFrames(edit.FadeInMs),
+        EngineFormat.MsToFrames(edit.FadeOutMs),
+        totalFrames);
+
     public float GainAt(long frame)
     {
         var gain = _gain;

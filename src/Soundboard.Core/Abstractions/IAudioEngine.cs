@@ -43,6 +43,14 @@ public interface IAudioEngine : IDisposable
 
     IReadOnlyList<PlaybackProgress> GetActivePlaybacks();
 
+    /// <summary>
+    /// Editor "listen": plays <paramref name="sound"/> (with its possibly unsaved edits) on the monitor
+    /// output only, never to the game, replacing any previous preview.
+    /// </summary>
+    void Preview(SoundItem sound);
+
+    void StopPreview();
+
     /// <summary>Held state of the push-to-talk key. Ignored for voice while <see cref="MicMode.AlwaysOn"/>.</summary>
     void SetPushToTalk(bool pressed);
 

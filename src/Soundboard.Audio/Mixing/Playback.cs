@@ -3,13 +3,16 @@ using Soundboard.Core.Models;
 namespace Soundboard.Audio.Mixing;
 
 /// <summary>One triggered sound: its voice on the game output and/or on the monitor output.</summary>
-internal sealed class Playback(Guid soundId, Voice? gameVoice, Voice? monitorVoice) : IDisposable
+internal sealed class Playback(Guid soundId, Voice? gameVoice, Voice? monitorVoice, bool isPreview = false) : IDisposable
 {
     public Guid SoundId { get; } = soundId;
 
     public Voice? GameVoice { get; } = gameVoice;
 
     public Voice? MonitorVoice { get; } = monitorVoice;
+
+    /// <summary>Editor preview: monitor only, replaced by the next preview.</summary>
+    public bool IsPreview { get; } = isPreview;
 
     public bool IsFinished => (GameVoice?.IsFinished ?? true) && (MonitorVoice?.IsFinished ?? true);
 
