@@ -70,6 +70,7 @@ Name: "startup"; Description: "{cm:TaskStartup}"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\licenses\Apache-2.0.txt"; DestDir: "{app}\licenses"; Flags: ignoreversion
 

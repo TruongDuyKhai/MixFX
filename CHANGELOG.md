@@ -14,6 +14,7 @@
     - Phát hiện app đang chạy qua `AppMutex`.
     - Gỡ cài giữ `%AppData%\Soundboard`; chỉ xóa khi người dùng chọn Yes, và không bao giờ xóa khi gỡ im lặng.
   - `THIRD-PARTY-NOTICES.md` và `licenses/Apache-2.0.txt` được cài kèm app; thêm `README.md`.
+- Giấy phép MIT cho project (`LICENSE`, cũng được cài kèm app dưới tên `LICENSE.txt`).
 - **P4 — Import + Editor.**
   - Import bằng nút hoặc kéo thả: copy vào `library\{guid}.{ext}`, file gốc chỉ được đọc. Mỗi file được giải mã thử khi import, và Editor tự mở sau đó.
   - Waveform (đỉnh theo bucket 10 ms) cache ở `library\{guid}.peaks`.

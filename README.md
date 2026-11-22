@@ -64,3 +64,7 @@ dotnet test tests/Soundboard.Input.Tests -- xUnit.Explicit=only
 ```
 
 Kiến trúc, quy tắc code và lộ trình nằm trong [PROJECT_PROMPT.md](PROJECT_PROMPT.md). Lịch sử thay đổi xem [CHANGELOG.md](CHANGELOG.md); thư viện bên thứ ba xem [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Giấy phép
+
+[MIT](LICENSE). VB-Audio Virtual Cable không nằm trong repo hay trong bản cài, và có giấy phép riêng của VB-Audio.
