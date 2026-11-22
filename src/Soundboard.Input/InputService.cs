@@ -57,6 +57,9 @@ public sealed class InputService : IInputService
         _logger.LogInformation("Input hooks installed");
     }
 
+    /// <summary>The installed hooks, for tests that exercise the watchdog.</summary>
+    internal LowLevelHooks? Hooks => _hooks;
+
     public void SetBindings(IReadOnlyList<Binding> bindings)
     {
         _matcher.SetBindings(bindings);

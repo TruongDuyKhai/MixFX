@@ -5,6 +5,10 @@
 ## [Unreleased] — 1.0.0-rc.1
 
 ### Added
+- **Watchdog cho phím tắt.** Windows có thể tự gỡ low-level hook mà không báo khi callback bị chậm (máy quá tải). Hook giờ được cài lại mỗi 10 giây:
+  - Hook mới được cài trước, các lời gọi hook còn chờ được xử lý hết, rồi mới gỡ hook cũ. Nhờ vậy không có khoảng trống và không mất phím nào, kể cả phím nhả của PTT.
+  - Bộ lọc `DuplicateEventFilter` bỏ sự kiện đi qua cả hai hook trong lúc chồng nhau.
+  - Có test hook thật cho phím đến đúng lúc đang cài lại.
 - **P5 — Đóng gói.**
   - `build-installer.ps1`: đọc version từ `Directory.Build.props`, chạy `dotnet publish` (self-contained, single-file, win-x64), rồi gọi Inno Setup 6. Kết quả là `artifacts/Soundboard-Setup-<version>.exe`.
   - `installer/Soundboard.iss`:

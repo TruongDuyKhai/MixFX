@@ -13,6 +13,9 @@ namespace Soundboard.Input.Tests.Integration;
 /// Explicit because it touches system-wide input: <c>dotnet test tests/Soundboard.Input.Tests -- xUnit.Explicit=only</c>.
 /// Synthetic input is used only here, in a test, never by the app (PROJECT_PROMPT.md §2).
 /// </summary>
+// Only one set of low-level hooks may exist per process, so these tests must not run in parallel.
+[Collection(nameof(RealHookTests))]
+[CollectionDefinition(nameof(RealHookTests), DisableParallelization = true)]
 public sealed partial class RealHookTests
 {
     private const int F23 = VirtualKeys.F1 + 22;
@@ -34,6 +37,42 @@ public sealed partial class RealHookTests
 
         await WaitUntilAsync(() => dispatcher.Calls.Count >= 2);
         dispatcher.Calls.Should().Equal(("Test", target, TriggerPhase.Down, TriggerMode.Hold), ("Test", target, TriggerPhase.Up, TriggerMode.Hold));
+    }
+
+    [Theory(Explicit = true)]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task RepeatedPresses_EachFireOnce_EvenWhenArrivingDuringRearm(bool rearm, bool passThrough)
+    {
+        // Regression: a key arriving while the hooks were re-armed was queued for the old hook and lost
+        // when it was removed (a lost key-up would leave push-to-talk stuck open).
+        var dispatcher = new RecordingDispatcher();
+        using var input = new InputService(dispatcher, NullLogger<InputService>.Instance);
+        input.Start();
+        input.SetBindings([new Binding(Guid.NewGuid(), new Trigger(InputDevice.Keyboard, F24, Modifiers.None), "Test", null, TriggerMode.Press, passThrough)]);
+
+        for (var press = 0; press < 5; press++)
+        {
+            if (rearm)
+            {
+                // Re-arm right before each key: the event may arrive while old and new hooks overlap.
+                input.Hooks!.RequestRearm();
+            }
+
+            SendKey(F24, down: true);
+            SendKey(F24, down: false);
+            await Task.Delay(50, TestContext.Current.CancellationToken);
+        }
+
+        await WaitUntilAsync(() => dispatcher.Calls.Count >= 10);
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+        if (rearm)
+        {
+            input.Hooks!.RearmCount.Should().BeGreaterThanOrEqualTo(5);
+        }
+
+        dispatcher.Calls.Should().HaveCount(10, "five presses, one Down and one Up each, never doubled");
     }
 
     [Fact(Explicit = true)]
