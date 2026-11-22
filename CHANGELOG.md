@@ -14,9 +14,16 @@
   - **Playlist:** "Thêm vào playlist" trong menu chuột phải, có nút ▶/■ và phím tắt chung; phát lần lượt, lặp lại, chỉ chuyển bài khi bài hiện tại phát hết.
   - **Web remote:** trang nút và API HTTP trên `localhost` có token, dùng được với Stream Deck, script hoặc trình duyệt trên cùng máy (ADR 0004).
 - Schema settings **v2** với migration từ v1 (test bằng fixture v1); file v1 cũ được giữ làm `.bak` sau lần lưu đầu.
+- **Tải nhạc từ YouTube** (thử nghiệm, mặc định tắt, ADR 0005). Bật trong cửa sổ "Thử nghiệm" thì có thêm nút "Tải từ YouTube":
+  - Dán link một video (tối đa 20 phút). App lấy phần âm thanh, thêm vào soundboard với tên video, rồi mở Editor.
+  - Lần đầu dùng, app hỏi trước rồi mới tải yt-dlp và Deno (khoảng 70 MB) từ GitHub chính thức. Mỗi file được kiểm SHA-256; file không khớp bị bỏ và không bao giờ được chạy.
+  - App tự kiểm tra bản mới mỗi ngày khi bạn mở cửa sổ tải.
+  - Hủy giữa chừng thì tắt hẳn tiến trình tải và xóa file tạm.
+- Schema settings **v3** (`MigrateV2ToV3`, test bằng fixture v2): thêm cờ `youTubeImport`.
 
 ### Changed
 - `SoundStoppedEventArgs` có thêm `Completed` (phát hết tự nhiên hay bị dừng). `IAudioEngine` có thêm `ApplyFeatures`.
+- Interface mới `IAudioDownloader`. `MainViewModel` nhận thêm tham số này, và `IDialogService` có thêm `DownloadFromYouTube`.
 
 ## [1.0.0] - 2026-11-22
 

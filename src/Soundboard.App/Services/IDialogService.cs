@@ -1,3 +1,5 @@
+using Soundboard.Core.Downloads;
+
 namespace Soundboard.App.Services;
 
 /// <summary>Lets view models open windows and ask questions without referencing WPF types.</summary>
@@ -21,6 +23,9 @@ public interface IDialogService
 
     /// <summary>Opens the editor for a sound already on the board.</summary>
     void EditSound(Guid soundId);
+
+    /// <summary>"Tải từ YouTube" (§5.8). The downloaded file, or null when the user closed the window without one.</summary>
+    DownloadedAudio? DownloadFromYouTube();
 
     /// <summary>Audio files chosen for import; empty when cancelled.</summary>
     IReadOnlyList<string> PickAudioFiles();

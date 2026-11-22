@@ -81,6 +81,13 @@
       </StackPanel>
     </Border>
 
+    <Border Style="{StaticResource Card}">
+      <StackPanel>
+        <CheckBox FontWeight="SemiBold" Content="Tải nhạc từ YouTube" IsChecked="{Binding YouTubeImport}" />
+        <TextBlock Style="{StaticResource Hint}" Text="Thêm nút &quot;Tải từ YouTube&quot; cạnh &quot;+ Thêm sound&quot;. Lần đầu dùng, app hỏi trước rồi mới tải yt-dlp và Deno (khoảng 70 MB) từ GitHub." />
+      </StackPanel>
+    </Border>
+
     <Button Margin="0,14,0,0" HorizontalAlignment="Right" Padding="20,6" Content="Đóng" IsCancel="True" IsDefault="True" />
   </StackPanel>
 </Window>

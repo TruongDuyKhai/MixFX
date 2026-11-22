@@ -6,8 +6,11 @@ namespace Soundboard.Core.Models;
 /// </summary>
 public sealed record AppSettings
 {
-    /// <summary>v2: feature flags, ducking depth, voice changer pitch, playlist and web remote (P6).</summary>
-    public const int CurrentSchemaVersion = 2;
+    /// <summary>
+    /// v2: feature flags, ducking depth, voice changer pitch, playlist and web remote (P6).
+    /// v3: the <see cref="FeatureFlags.YouTubeImport"/> flag.
+    /// </summary>
+    public const int CurrentSchemaVersion = 3;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
 

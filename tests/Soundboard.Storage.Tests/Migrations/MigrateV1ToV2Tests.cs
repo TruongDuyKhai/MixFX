@@ -75,7 +75,7 @@ public sealed class MigrateV1ToV2Tests : IDisposable
     }
 
     [Fact]
-    public async Task Store_LoadsV1FixtureAsV2_AndSavesItAsV2()
+    public async Task Store_LoadsV1Fixture_AndSavesItAtTheCurrentVersion()
     {
         var paths = new StoragePaths(_dir.Path);
         Directory.CreateDirectory(_dir.Path);
@@ -86,10 +86,11 @@ public sealed class MigrateV1ToV2Tests : IDisposable
         await store.SaveAsync(loaded.Settings, TestContext.Current.CancellationToken);
 
         loaded.Status.Should().Be(SettingsLoadStatus.Loaded);
-        loaded.Settings.SchemaVersion.Should().Be(2);
+        // The whole chain runs: v1 → v2 here, then every later migration.
+        loaded.Settings.SchemaVersion.Should().Be(AppSettings.CurrentSchemaVersion);
         loaded.Settings.Features.Should().Be(new FeatureFlags());
         loaded.Settings.Sounds.Should().ContainSingle().Which.Name.Should().Be("Airhorn");
-        JsonNode.Parse(File.ReadAllText(paths.SettingsFile))!["schemaVersion"]!.GetValue<int>().Should().Be(2);
+        JsonNode.Parse(File.ReadAllText(paths.SettingsFile))!["schemaVersion"]!.GetValue<int>().Should().Be(AppSettings.CurrentSchemaVersion);
         File.ReadAllText(paths.SettingsBackupFile).Should().Contain("\"schemaVersion\": 1", "the v1 file is kept as the backup");
     }
 

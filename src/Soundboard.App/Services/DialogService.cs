@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using Soundboard.App.ViewModels;
 using Soundboard.App.Views;
 using Soundboard.Core.Abstractions;
+using Soundboard.Core.Downloads;
 using Soundboard.Core.Models;
 
 namespace Soundboard.App.Services;
@@ -63,6 +64,15 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
             this,
             services.GetRequiredService<ILogger<EditorViewModel>>());
         new EditorWindow(viewModel) { Owner = Owner }.ShowDialog();
+    }
+
+    public DownloadedAudio? DownloadFromYouTube()
+    {
+        var viewModel = new YouTubeDownloadViewModel(
+            services.GetRequiredService<IAudioDownloader>(),
+            services.GetRequiredService<ILogger<YouTubeDownloadViewModel>>());
+        new YouTubeDownloadWindow(viewModel) { Owner = Owner }.ShowDialog();
+        return viewModel.Result;
     }
 
     public IReadOnlyList<string> PickAudioFiles()

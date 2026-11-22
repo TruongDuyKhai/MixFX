@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Soundboard.App.Services;
 using Soundboard.App.ViewModels;
+using Soundboard.Core.Downloads;
 
 namespace Soundboard.App.Tests;
 
@@ -19,7 +21,21 @@ public sealed class MainViewModelTests
         second.Should().NotThrow();
     }
 
-    private static MainViewModel Create()
+    [Fact]
+    public async Task ImportDownloaded_UnreadableFile_ReportsItAndStillDeletesTheDownload()
+    {
+        var downloader = new FakeAudioDownloader();
+        var dialogs = new RecordingDialogs();
+        var viewModel = Create(downloader, dialogs);
+        var audio = new DownloadedAudio(@"C:\downloads\job\jNQXAC9IVRw.m4a", "Me at the zoo");
+
+        await viewModel.ImportDownloadedAsync(audio);
+
+        downloader.Deleted.Should().ContainSingle().Which.Should().Be(audio);
+        dialogs.Errors.Should().ContainSingle().Which.Should().Contain("Me at the zoo");
+    }
+
+    private static MainViewModel Create(FakeAudioDownloader? downloader = null, IDialogService? dialogs = null)
     {
         var engine = new StubEngine();
         var settings = new StubSettings();
@@ -29,7 +45,8 @@ public sealed class MainViewModelTests
             new StubDispatcher(),
             new StubLibrary(),
             new StubWaveforms(),
-            new StubDialogs(),
+            downloader ?? new FakeAudioDownloader(),
+            dialogs ?? new StubDialogs(),
             new StubStartup(),
             new Soundboard.Core.Playlist.PlaylistController(engine, settings),
             NullLogger<MainViewModel>.Instance);

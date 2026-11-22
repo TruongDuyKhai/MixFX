@@ -9,6 +9,7 @@ using Soundboard.App.Services;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Actions;
 using Soundboard.Core.Bindings;
+using Soundboard.Core.Downloads;
 using Soundboard.Core.Events;
 using Soundboard.Core.Models;
 using Soundboard.Core.Playlist;
@@ -36,6 +37,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly IActionDispatcher _dispatcher;
     private readonly ISoundLibrary _library;
     private readonly IWaveformService _waveforms;
+    private readonly IAudioDownloader _downloader;
     private readonly IDialogService _dialogs;
     private readonly IStartupRegistration _startup;
     private readonly PlaylistController _playlist;
@@ -68,6 +70,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _showCableBanner;
     private bool _hasNoSounds = true;
     private bool _playlistEnabled;
+    private bool _youTubeImportEnabled;
     private string _playlistNowText = "Playlist đang dừng";
 
     public MainViewModel(
@@ -76,6 +79,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         IActionDispatcher dispatcher,
         ISoundLibrary library,
         IWaveformService waveforms,
+        IAudioDownloader downloader,
         IDialogService dialogs,
         IStartupRegistration startup,
         PlaylistController playlist,
@@ -87,6 +91,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _dispatcher = dispatcher;
         _library = library;
         _waveforms = waveforms;
+        _downloader = downloader;
         _dialogs = dialogs;
         _startup = startup;
         _logger = logger;
@@ -94,6 +99,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         StopAllCommand = new RelayCommand(_engine.StopAll);
         ImportCommand = new AsyncRelayCommand(() => ImportAsync(_dialogs.PickAudioFiles()));
+        DownloadFromYouTubeCommand = new AsyncRelayCommand(DownloadFromYouTubeAsync);
         RefreshDevicesCommand = new RelayCommand(RefreshDevices);
         OpenHotkeysCommand = new RelayCommand(_dialogs.ShowGlobalHotkeys);
         OpenExperimentalCommand = new RelayCommand(_dialogs.ShowExperimental);
@@ -122,6 +128,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public ICommand ImportCommand { get; }
 
+    public ICommand DownloadFromYouTubeCommand { get; }
+
     public ICommand RefreshDevicesCommand { get; }
 
     public ICommand OpenHotkeysCommand { get; }
@@ -138,6 +146,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _playlistEnabled;
         private set => SetProperty(ref _playlistEnabled, value);
+    }
+
+    /// <summary>Shows "Tải từ YouTube" (<see cref="FeatureFlags.YouTubeImport"/>).</summary>
+    public bool YouTubeImportEnabled
+    {
+        get => _youTubeImportEnabled;
+        private set => SetProperty(ref _youTubeImportEnabled, value);
     }
 
     public string PlaylistNowText
@@ -479,6 +494,37 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Adds a file fetched by "Tải từ YouTube", named after the video, then opens the editor (§5.3). The download
+    /// is deleted afterwards either way: the library keeps its own copy.
+    /// </summary>
+    public async Task ImportDownloadedAsync(DownloadedAudio audio)
+    {
+        ArgumentNullException.ThrowIfNull(audio);
+
+        StatusMessage = $"Đang thêm \"{audio.Title}\"…";
+        SoundItem? sound;
+        try
+        {
+            sound = await ImportOneAsync(audio.FilePath, _settings.Current.Sounds.Count, audio.Title.Trim());
+        }
+        finally
+        {
+            _downloader.Delete(audio);
+        }
+
+        if (sound is null)
+        {
+            StatusMessage = string.Empty;
+            _dialogs.ShowError($"Không thêm được \"{audio.Title}\": file tải về không đọc được.");
+            return;
+        }
+
+        _settings.Update(s => s with { Sounds = [.. s.Sounds, sound] });
+        StatusMessage = $"Đã thêm \"{sound.Name}\".";
+        _dialogs.EditSound(sound.Id);
+    }
+
     public void Dispose()
     {
         // Idempotent: a throwing second call would abort the DI container's disposal of the engine and hooks.
@@ -646,6 +692,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             PttHotkeyText = ptt is null ? "chưa gán" : TriggerFormatter.Format(ptt.Trigger);
 
             PlaylistEnabled = settings.Features.Playlist;
+            YouTubeImportEnabled = settings.Features.YouTubeImport;
             SyncTiles(settings);
             HasNoSounds = settings.Sounds.Count == 0;
         }
@@ -721,7 +768,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : "Đang phát: " + string.Join(", ", Tiles.Where(t => t.IsPlaying).Select(t => t.Name));
     }
 
-    private async Task<SoundItem?> ImportOneAsync(string path, int position)
+    private async Task DownloadFromYouTubeAsync()
+    {
+        if (_dialogs.DownloadFromYouTube() is { } audio)
+        {
+            await ImportDownloadedAsync(audio);
+        }
+    }
+
+    /// <param name="name">Sound name; the file name when null.</param>
+    private async Task<SoundItem?> ImportOneAsync(string path, int position, string? name = null)
     {
         var id = Guid.NewGuid();
         string libraryFile;
@@ -735,7 +791,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return null;
         }
 
-        var sound = new SoundItem(id, Path.GetFileNameWithoutExtension(path), libraryFile, SoundPalette.ForIndex(position),
+        var sound = new SoundItem(id, name ?? Path.GetFileNameWithoutExtension(path), libraryFile, SoundPalette.ForIndex(position),
             AudioSettings.DefaultVolume, PlaybackKind.Preloaded, EditParams.None);
         try
         {

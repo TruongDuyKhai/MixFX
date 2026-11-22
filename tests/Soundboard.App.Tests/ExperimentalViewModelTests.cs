@@ -13,7 +13,17 @@ public sealed class ExperimentalViewModelTests
     {
         var vm = new ExperimentalViewModel(_settings, _dialogs);
 
-        new[] { vm.Ducking, vm.SoundEffects, vm.VoiceChanger, vm.Playlist, vm.WebRemote }.Should().OnlyContain(on => !on);
+        new[] { vm.Ducking, vm.SoundEffects, vm.VoiceChanger, vm.Playlist, vm.WebRemote, vm.YouTubeImport }.Should().OnlyContain(on => !on);
+    }
+
+    [Fact]
+    public void YouTubeImport_TogglesItsFlagOnly()
+    {
+        var vm = new ExperimentalViewModel(_settings, _dialogs);
+
+        vm.YouTubeImport = true;
+
+        _settings.Current.Features.Should().Be(new FeatureFlags { YouTubeImport = true });
     }
 
     [Fact]

@@ -29,7 +29,7 @@ App **không** can thiệp vào game: không inject, không đọc/ghi bộ nh�
   - Export WAV.
 - Âm lượng riêng cho: sound → đồng đội, sound → tai nghe, giọng.
 - Thu nhỏ xuống khay hệ thống, khởi động cùng Windows, tự kết nối lại khi rút/cắm thiết bị.
-- **Thử nghiệm** (tắt sẵn, bật ở nút "Thử nghiệm"): ducking, pitch/reverb cho sound, voice changer, playlist, web remote.
+- **Thử nghiệm** (tắt sẵn, bật ở nút "Thử nghiệm"): ducking, pitch/reverb cho sound, voice changer, playlist, web remote, tải nhạc từ YouTube.
 
 ### Web remote (Stream Deck, script)
 
@@ -44,6 +44,17 @@ POST http://localhost:8765/api/trigger?token=<token>&action=PttHold&phase=down  
 ```
 
 Với Stream Deck, dùng một plugin gửi HTTP request (ví dụ "Web Requests" / "API Ninja") trỏ tới các URL trên. Token cũng có thể gửi qua header `X-Soundboard-Token`.
+
+### Tải nhạc từ YouTube
+
+Bật "Tải nhạc từ YouTube" trong cửa sổ "Thử nghiệm", bấm "Tải từ YouTube", rồi dán link một video (tối đa 20 phút). App lấy phần âm thanh, thêm vào soundboard và mở Editor để bạn cắt.
+
+Lần đầu dùng, app cần [yt-dlp](https://github.com/yt-dlp/yt-dlp) và [Deno](https://github.com/denoland/deno) (khoảng 70 MB):
+
+- App chỉ tải sau khi bạn bấm "Tải công cụ". Nguồn là trang phát hành chính thức trên GitHub; app kiểm mã SHA-256 rồi lưu trong `%AppData%\Soundboard\tools`.
+- App tự kiểm tra bản mới mỗi ngày khi bạn mở cửa sổ tải. Không cần ffmpeg.
+
+Chỉ tải nội dung bạn có quyền sử dụng: điều khoản của YouTube không cho phép tải video, trừ khi YouTube tự cung cấp nút tải.
 
 ## Cài đặt và dùng
 
