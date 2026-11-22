@@ -11,6 +11,7 @@ using Soundboard.Core.Actions;
 using Soundboard.Core.Bindings;
 using Soundboard.Core.Events;
 using Soundboard.Core.Models;
+using Soundboard.Core.Playlist;
 
 namespace Soundboard.App.ViewModels;
 
@@ -37,6 +38,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly IWaveformService _waveforms;
     private readonly IDialogService _dialogs;
     private readonly IStartupRegistration _startup;
+    private readonly PlaylistController _playlist;
     private readonly ILogger<MainViewModel> _logger;
     private readonly SynchronizationContext? _ui;
     private readonly CancellationTokenSource _polling = new();
@@ -65,6 +67,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _isVoiceTransmitting;
     private bool _showCableBanner;
     private bool _hasNoSounds = true;
+    private bool _playlistEnabled;
+    private string _playlistNowText = "Playlist đang dừng";
 
     public MainViewModel(
         IAudioEngine engine,
@@ -74,8 +78,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         IWaveformService waveforms,
         IDialogService dialogs,
         IStartupRegistration startup,
+        PlaylistController playlist,
         ILogger<MainViewModel> logger)
     {
+        _playlist = playlist;
         _engine = engine;
         _settings = settings;
         _dispatcher = dispatcher;
@@ -90,6 +96,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ImportCommand = new AsyncRelayCommand(() => ImportAsync(_dialogs.PickAudioFiles()));
         RefreshDevicesCommand = new RelayCommand(RefreshDevices);
         OpenHotkeysCommand = new RelayCommand(_dialogs.ShowGlobalHotkeys);
+        OpenExperimentalCommand = new RelayCommand(_dialogs.ShowExperimental);
+
+        // Buttons are trigger sources too: they go through the dispatcher like hotkeys (§4.2).
+        PlaylistNextCommand = new RelayCommand(() => PressAction(ActionIds.PlaylistNext));
+        PlaylistStopCommand = new RelayCommand(() => PressAction(ActionIds.PlaylistStop));
         OpenSetupCommand = new RelayCommand(() =>
         {
             _dialogs.ShowSetup();
@@ -116,6 +127,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand OpenHotkeysCommand { get; }
 
     public ICommand OpenSetupCommand { get; }
+
+    public ICommand OpenExperimentalCommand { get; }
+
+    public ICommand PlaylistNextCommand { get; }
+
+    public ICommand PlaylistStopCommand { get; }
+
+    public bool PlaylistEnabled
+    {
+        get => _playlistEnabled;
+        private set => SetProperty(ref _playlistEnabled, value);
+    }
+
+    public string PlaylistNowText
+    {
+        get => _playlistNowText;
+        private set => SetProperty(ref _playlistNowText, value);
+    }
 
     public string SettingsStatus
     {
@@ -340,6 +369,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _engine.DeviceLost += OnDeviceLost;
         _engine.SoundFailed += OnSoundFailed;
         _settings.Changed += OnSettingsChanged;
+        _playlist.CurrentChanged += OnPlaylistChanged;
 
         _syncing = true;
         _startWithWindows = _startup.IsEnabled;
@@ -464,7 +494,36 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _engine.DeviceLost -= OnDeviceLost;
         _engine.SoundFailed -= OnSoundFailed;
         _settings.Changed -= OnSettingsChanged;
+        _playlist.CurrentChanged -= OnPlaylistChanged;
     }
+
+    private void PressAction(string actionId)
+    {
+        try
+        {
+            _dispatcher.Dispatch(actionId, null, TriggerPhase.Down, TriggerMode.Press);
+            _dispatcher.Dispatch(actionId, null, TriggerPhase.Up, TriggerMode.Press);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Action {ActionId} from a button failed", actionId);
+            StatusMessage = $"Không thực hiện được: {ex.Message}";
+        }
+    }
+
+    private void OnPlaylistChanged(object? sender, EventArgs e) => OnUi(UpdatePlaylistNow);
+
+    private void UpdatePlaylistNow()
+    {
+        var current = _playlist.CurrentSoundId;
+        var name = current is null ? null : _settings.Current.Sounds.FirstOrDefault(s => s.Id == current)?.Name;
+        PlaylistNowText = name is null ? "Playlist đang dừng" : $"Playlist: {name}";
+    }
+
+    private void TogglePlaylist(SoundTileViewModel tile) => _settings.Update(s => s with
+    {
+        Playlist = s.Playlist.Contains(tile.Id) ? [.. s.Playlist.Where(id => id != tile.Id)] : [.. s.Playlist, tile.Id],
+    });
 
     private static Binding? SoundBinding(AppSettings settings, Guid soundId) =>
         settings.Bindings.FirstOrDefault(b => b.ActionId == ActionIds.PlaySound && b.TargetId == soundId);
@@ -586,6 +645,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var ptt = settings.Bindings.FirstOrDefault(b => b.ActionId == ActionIds.PttHold);
             PttHotkeyText = ptt is null ? "chưa gán" : TriggerFormatter.Format(ptt.Trigger);
 
+            PlaylistEnabled = settings.Features.Playlist;
             SyncTiles(settings);
             HasNoSounds = settings.Sounds.Count == 0;
         }
@@ -603,7 +663,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var sound = settings.Sounds[i];
             if (!existing.TryGetValue(sound.Id, out var tile))
             {
-                tile = new SoundTileViewModel(sound.Id, EditSound, ChangeKey, DeleteAsync, DuplicateAsync);
+                tile = new SoundTileViewModel(sound.Id, EditSound, ChangeKey, DeleteAsync, DuplicateAsync, TogglePlaylist);
                 Tiles.Insert(i, tile);
             }
             else if (Tiles.IndexOf(tile) is var index && index != i)
@@ -613,6 +673,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             var binding = SoundBinding(settings, sound.Id);
             tile.Update(sound, binding is null ? null : TriggerFormatter.Format(binding.Trigger));
+            tile.UpdatePlaylist(settings.Features.Playlist, settings.Playlist.Contains(sound.Id));
         }
 
         while (Tiles.Count > settings.Sounds.Count)
@@ -722,6 +783,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Sounds = [.. s.Sounds.Where(x => x.Id != sound.Id)],
             Bindings = [.. s.Bindings.Where(b => b.TargetId != sound.Id)],
+            Playlist = [.. s.Playlist.Where(id => id != sound.Id)],
         });
 
         // Give a streamed playback time to close its file before deleting the library copy.

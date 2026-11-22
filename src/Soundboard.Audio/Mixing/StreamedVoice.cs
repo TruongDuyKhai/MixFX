@@ -1,5 +1,6 @@
 using Soundboard.Audio.Buffers;
 using Soundboard.Audio.Decoding;
+using Soundboard.Core.Abstractions;
 
 namespace Soundboard.Audio.Mixing;
 
@@ -21,8 +22,8 @@ internal sealed class StreamedVoice : Voice
     // Set by the engine thread after its last write, read by the audio thread.
     private int _decoderEnded;
 
-    public StreamedVoice(Guid soundId, DecodedAudio decoder, long totalFrames, EditEnvelope envelope)
-        : base(soundId, totalFrames, envelope)
+    public StreamedVoice(Guid soundId, DecodedAudio decoder, long totalFrames, EditEnvelope envelope, IEffect[]? effects = null)
+        : base(soundId, totalFrames, envelope, effects)
     {
         ArgumentNullException.ThrowIfNull(decoder);
 

@@ -29,6 +29,21 @@ App **không** can thiệp vào game: không inject, không đọc/ghi bộ nh�
   - Export WAV.
 - Âm lượng riêng cho: sound → đồng đội, sound → tai nghe, giọng.
 - Thu nhỏ xuống khay hệ thống, khởi động cùng Windows, tự kết nối lại khi rút/cắm thiết bị.
+- **Thử nghiệm** (tắt sẵn, bật ở nút "Thử nghiệm"): ducking, pitch/reverb cho sound, voice changer, playlist, web remote.
+
+### Web remote (Stream Deck, script)
+
+Bật "Web remote" trong cửa sổ "Thử nghiệm", rồi lấy link có token ở đó. API chỉ nghe trên `localhost`:
+
+```text
+GET  http://localhost:8765/?token=<token>                    trang nút bấm
+GET  http://localhost:8765/api/sounds?token=<token>          danh sách sound (JSON)
+POST http://localhost:8765/api/trigger?token=<token>&action=PlaySound&target=<id sound>
+POST http://localhost:8765/api/trigger?token=<token>&action=StopAll
+POST http://localhost:8765/api/trigger?token=<token>&action=PttHold&phase=down    (rồi phase=up)
+```
+
+Với Stream Deck, dùng một plugin gửi HTTP request (ví dụ "Web Requests" / "API Ninja") trỏ tới các URL trên. Token cũng có thể gửi qua header `X-Soundboard-Token`.
 
 ## Cài đặt và dùng
 

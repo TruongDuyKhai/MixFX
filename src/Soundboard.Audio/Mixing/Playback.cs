@@ -16,6 +16,9 @@ internal sealed class Playback(Guid soundId, Voice? gameVoice, Voice? monitorVoi
 
     public bool IsFinished => (GameVoice?.IsFinished ?? true) && (MonitorVoice?.IsFinished ?? true);
 
+    /// <summary>Played to the end on at least one output (not stopped, not cut by a lost device).</summary>
+    public bool Completed => (GameVoice?.EndedNaturally ?? false) || (MonitorVoice?.EndedNaturally ?? false);
+
     public PlaybackProgress Progress
     {
         get

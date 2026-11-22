@@ -14,6 +14,9 @@ public interface IDialogService
 
     void ShowSetup();
 
+    /// <summary>"Tính năng thử nghiệm": the P6 feature flags.</summary>
+    void ShowExperimental();
+
     void OpenUrl(string url);
 
     /// <summary>Opens the editor for a sound already on the board.</summary>

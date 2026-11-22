@@ -19,13 +19,19 @@ public sealed class MainViewModelTests
         second.Should().NotThrow();
     }
 
-    private static MainViewModel Create() => new(
-        new StubEngine(),
-        new StubSettings(),
-        new StubDispatcher(),
-        new StubLibrary(),
-        new StubWaveforms(),
-        new StubDialogs(),
-        new StubStartup(),
-        NullLogger<MainViewModel>.Instance);
+    private static MainViewModel Create()
+    {
+        var engine = new StubEngine();
+        var settings = new StubSettings();
+        return new MainViewModel(
+            engine,
+            settings,
+            new StubDispatcher(),
+            new StubLibrary(),
+            new StubWaveforms(),
+            new StubDialogs(),
+            new StubStartup(),
+            new Soundboard.Core.Playlist.PlaylistController(engine, settings),
+            NullLogger<MainViewModel>.Instance);
+    }
 }

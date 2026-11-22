@@ -38,4 +38,17 @@ public sealed record AudioSettings
     public MicMode MicMode { get; init; } = MicMode.PushToTalk;
 
     public PlaybackMode PlaybackMode { get; init; } = PlaybackMode.Overlap;
+
+    /// <summary>Default ducking depth: sounds drop to a quarter of their level while you talk.</summary>
+    public const float DefaultDuckingDb = -12f;
+
+    public const float MinDuckingDb = -30f;
+
+    /// <summary>How much sounds to the game are lowered while voice is transmitting (<see cref="FeatureFlags.Ducking"/>).</summary>
+    public float DuckingDb { get; init; } = DefaultDuckingDb;
+
+    public const float MaxVoicePitchSemitones = 12f;
+
+    /// <summary>Voice changer pitch in semitones; 0 leaves the voice untouched (<see cref="FeatureFlags.VoiceChanger"/>).</summary>
+    public float VoicePitchSemitones { get; init; }
 }

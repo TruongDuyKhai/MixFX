@@ -1,3 +1,5 @@
+using Soundboard.Core.Abstractions;
+
 namespace Soundboard.Audio.Mixing;
 
 /// <summary>
@@ -9,6 +11,7 @@ internal abstract class Voice : IDisposable
     private const int Channels = EngineFormat.Channels;
 
     private readonly EditEnvelope _envelope;
+    private readonly IEffect[] _effects;
     private readonly long _stopFadeFrames = EngineFormat.MsToFrames(EngineFormat.StopFadeMs);
 
     // Audio thread only.
@@ -19,13 +22,19 @@ internal abstract class Voice : IDisposable
     private long _publishedPosition;
     private int _stopRequested;
     private int _finished;
+    private int _endedNaturally;
 
-    protected Voice(Guid soundId, long totalFrames, EditEnvelope envelope)
+    /// <param name="effects">This voice's own effect chain (effects keep state, so voices never share one).</param>
+    protected Voice(Guid soundId, long totalFrames, EditEnvelope envelope, IEffect[]? effects)
     {
         SoundId = soundId;
         TotalFrames = totalFrames;
         _envelope = envelope;
+        _effects = effects ?? [];
     }
+
+    /// <summary>True when the sound played to its end, as opposed to being stopped or cut by a lost device.</summary>
+    public bool EndedNaturally => Volatile.Read(ref _endedNaturally) != 0;
 
     public Guid SoundId { get; }
 
@@ -66,7 +75,13 @@ internal abstract class Voice : IDisposable
 
         var frames = (int)Math.Clamp(framesLeft, 0, framesWanted);
         var read = ReadFrames(destination[..(frames * Channels)], out var sourceEnded);
-        ApplyEnvelope(destination[..(read * Channels)]);
+        var audible = destination[..(read * Channels)];
+        foreach (var effect in _effects)
+        {
+            effect.Process(audible);
+        }
+
+        ApplyEnvelope(audible);
 
         _position += read;
         if (_stopFramesLeft >= 0)
@@ -78,6 +93,11 @@ internal abstract class Voice : IDisposable
 
         if (sourceEnded || _position >= TotalFrames || _stopFramesLeft == 0)
         {
+            if (_stopFramesLeft < 0)
+            {
+                Volatile.Write(ref _endedNaturally, 1);
+            }
+
             MarkFinished();
             return read * Channels;
         }

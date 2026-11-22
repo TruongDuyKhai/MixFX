@@ -1,15 +1,17 @@
 using Microsoft.Extensions.Logging;
+using Soundboard.App.WebRemote;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Events;
 using Soundboard.Core.Models;
 
 namespace Soundboard.App.Services;
 
-/// <summary>Pushes settings changes to the engine and the hotkey hooks, touching only what changed.</summary>
+/// <summary>Pushes settings changes to the engine, the hotkey hooks and the web remote, touching only what changed.</summary>
 public sealed class SettingsSync(
     ISettingsProvider settings,
     IAudioEngine engine,
     IInputService input,
+    WebRemoteServer webRemote,
     ILogger<SettingsSync> logger) : IDisposable
 {
     /// <summary>Applies the current settings once, then follows every change.</summary>
@@ -17,7 +19,9 @@ public sealed class SettingsSync(
     {
         var current = settings.Current;
         engine.ApplySettings(current.Audio);
+        engine.ApplyFeatures(current.Features);
         input.SetBindings(current.Bindings);
+        webRemote.Apply(current);
         Preload(current.Sounds);
 
         settings.Changed += OnChanged;
@@ -32,9 +36,19 @@ public sealed class SettingsSync(
             engine.ApplySettings(e.Current.Audio);
         }
 
+        if (e.Current.Features != e.Previous.Features)
+        {
+            engine.ApplyFeatures(e.Current.Features);
+        }
+
         if (!ReferenceEquals(e.Current.Bindings, e.Previous.Bindings))
         {
             input.SetBindings(e.Current.Bindings);
+        }
+
+        if (e.Current.Features.WebRemote != e.Previous.Features.WebRemote || e.Current.WebRemote != e.Previous.WebRemote)
+        {
+            webRemote.Apply(e.Current);
         }
 
         if (!ReferenceEquals(e.Current.Sounds, e.Previous.Sounds))

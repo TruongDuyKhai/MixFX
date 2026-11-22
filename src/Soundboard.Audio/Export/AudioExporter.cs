@@ -1,5 +1,6 @@
 using NAudio.Wave;
 using Soundboard.Audio.Decoding;
+using Soundboard.Audio.Effects;
 using Soundboard.Audio.Mixing;
 using Soundboard.Core.Abstractions;
 using Soundboard.Core.Models;
@@ -38,13 +39,16 @@ public sealed class AudioExporter(ISoundLibrary library) : IAudioExporter
         var frames = AudioDecoder.TrimmedFrames(decoded.SourceDuration, sound.Edit);
         var envelope = EditEnvelope.ForExport(sound.Edit, frames);
 
+        // Callers strip the effects when the SoundEffects flag is off, so the file matches what the board plays.
+        var effects = EffectChainFactory.Create(sound.Edit.Effects);
+
         // Written beside the target first, so a failed export never leaves a truncated file under the chosen name.
         var temp = destination + TempSuffix;
         try
         {
             using (var writer = new WaveFileWriter(temp, new WaveFormat(EngineFormat.SampleRate, BitsPerSample, EngineFormat.Channels)))
             {
-                WriteFrames(decoded, writer, envelope, frames, cancellationToken);
+                WriteFrames(decoded, writer, envelope, effects, frames, cancellationToken);
             }
 
             File.Move(temp, destination, overwrite: true);
@@ -56,7 +60,8 @@ public sealed class AudioExporter(ISoundLibrary library) : IAudioExporter
         }
     }
 
-    private static void WriteFrames(DecodedAudio decoded, WaveFileWriter writer, EditEnvelope envelope, long frames, CancellationToken cancellationToken)
+    private static void WriteFrames(
+        DecodedAudio decoded, WaveFileWriter writer, EditEnvelope envelope, IEffect[] effects, long frames, CancellationToken cancellationToken)
     {
         var buffer = new float[EngineFormat.ScratchSamples];
         long position = 0;
@@ -67,6 +72,11 @@ public sealed class AudioExporter(ISoundLibrary library) : IAudioExporter
             var wanted = (int)Math.Min(buffer.Length / EngineFormat.Channels, frames - position) * EngineFormat.Channels;
             var read = decoded.Samples.Read(buffer, 0, wanted);
             read -= read % EngineFormat.Channels;
+            foreach (var effect in effects)
+            {
+                effect.Process(buffer.AsSpan(0, read));
+            }
+
             for (var i = 0; i < read; i += EngineFormat.Channels)
             {
                 var gain = envelope.GainAt(position + (i / EngineFormat.Channels));

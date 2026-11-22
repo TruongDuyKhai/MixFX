@@ -27,6 +27,12 @@ public interface IAudioEngine : IDisposable
     /// <summary>Applies levels immediately and (re)opens only the devices whose choice changed.</summary>
     void ApplySettings(AudioSettings settings);
 
+    /// <summary>
+    /// Turns the experimental audio features on or off (ducking, per-sound effects, voice changer).
+    /// Added in P6 without a default implementation: a silent no-op would make the flags lie.
+    /// </summary>
+    void ApplyFeatures(FeatureFlags features);
+
     IReadOnlyList<AudioDeviceInfo> GetDevices(AudioDeviceFlow flow);
 
     AudioEndpointStatus GetStatus(AudioEndpointRole role);

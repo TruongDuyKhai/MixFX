@@ -26,6 +26,10 @@ internal sealed class StubEngine : IAudioEngine
     {
     }
 
+    public void ApplyFeatures(FeatureFlags features)
+    {
+    }
+
     public IReadOnlyList<AudioDeviceInfo> GetDevices(AudioDeviceFlow flow) => [];
 
     public AudioEndpointStatus GetStatus(AudioEndpointRole role) => AudioEndpointStatus.NotConfigured;
@@ -83,6 +87,90 @@ internal sealed class StubDispatcher : IActionDispatcher
     public DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase) => DispatchResult.Executed;
 }
 
+internal sealed class RecordingDispatcher(params string[] knownActions) : IActionDispatcher
+{
+    private readonly System.Collections.Concurrent.ConcurrentQueue<(string Action, Guid? Target, TriggerPhase Phase, TriggerMode Mode)> _calls = new();
+
+    public IReadOnlyList<(string Action, Guid? Target, TriggerPhase Phase, TriggerMode Mode)> Calls => [.. _calls];
+
+    public DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase) => Dispatch(actionId, targetId, phase, TriggerMode.Press);
+
+    public DispatchResult Dispatch(string actionId, Guid? targetId, TriggerPhase phase, TriggerMode mode)
+    {
+        if (!knownActions.Contains(actionId))
+        {
+            return DispatchResult.UnknownAction;
+        }
+
+        _calls.Enqueue((actionId, targetId, phase, mode));
+        return DispatchResult.Executed;
+    }
+}
+
+internal sealed class MutableSettings(AppSettings initial) : ISettingsProvider
+{
+    public event EventHandler<SettingsChangedEventArgs>? Changed;
+
+    public AppSettings Current { get; private set; } = initial;
+
+    public void Update(Func<AppSettings, AppSettings> change)
+    {
+        var previous = Current;
+        Current = change(previous);
+        Changed?.Invoke(this, new SettingsChangedEventArgs(previous, Current));
+    }
+}
+
+internal sealed class RecordingDialogs : IDialogService
+{
+    public List<string> Errors { get; } = [];
+
+    public bool Confirm(string message, string title) => false;
+
+    public void ShowError(string message) => Errors.Add(message);
+
+    public void EditBinding(string actionId, Guid? targetId, string title, bool allowModeChoice)
+    {
+    }
+
+    public void ShowGlobalHotkeys()
+    {
+    }
+
+    public void ShowSetup()
+    {
+    }
+
+    public void ShowExperimental()
+    {
+    }
+
+    public void OpenUrl(string url)
+    {
+    }
+
+    public void EditSound(Guid soundId)
+    {
+    }
+
+    public IReadOnlyList<string> PickAudioFiles() => [];
+
+    public string? PickExportPath(string suggestedFileName) => null;
+}
+
+internal sealed class FixedSettings(AppSettings settings) : ISettingsProvider
+{
+#pragma warning disable CS0067 // Event is part of the interface; these tests never raise it.
+    public event EventHandler<SettingsChangedEventArgs>? Changed;
+#pragma warning restore CS0067
+
+    public AppSettings Current { get; } = settings;
+
+    public void Update(Func<AppSettings, AppSettings> change)
+    {
+    }
+}
+
 internal sealed class StubLibrary : ISoundLibrary
 {
     public string GetFilePath(SoundItem sound) => throw new NotSupportedException();
@@ -118,6 +206,10 @@ internal sealed class StubDialogs : IDialogService
     }
 
     public void ShowSetup()
+    {
+    }
+
+    public void ShowExperimental()
     {
     }
 
