@@ -5,6 +5,19 @@
 ## [Unreleased]
 
 ### Added
+- **P3 — Giao diện chính.** Dùng theme Fluent Dark của WPF, thanh tiêu đề cũng tối.
+  - **Thanh trên:** chọn micro, Output A, Output B. Mỗi thiết bị có chấm trạng thái (đang chạy / chưa có / lỗi / mất kết nối). Có đèn MIC sáng khi giọng đang được truyền, cùng nút "Phím tắt chung" và "Hướng dẫn".
+  - **Lưới ô sound:** tên, màu, phím tắt, thanh tiến trình khi phát. Bấm ô sẽ đi qua `IActionDispatcher` với `TriggerMode` của sound. Chuột phải có "Đổi phím" / "Nhân bản" / "Xóa"; xóa chỉ xóa bản sao trong thư viện.
+  - **Thanh dưới:** slider "Sound → đồng đội", "Sound → tai nghe", "Giọng của bạn", các tùy chọn mic luôn mở, sound mới dừng sound cũ, khởi động cùng Windows, và nút "Dừng tất cả".
+  - **Cửa sổ gán phím:** nhấn để ghi nhận, có cảnh báo phím game và phím trùng, chọn kiểu kích hoạt, `PassThrough` mặc định bật.
+  - **Cửa sổ "Phím tắt chung":** PTT, dừng tất cả, bật/tắt mic, tăng/giảm âm lượng.
+  - **Hướng dẫn lần đầu:** kiểm tra VB-Cable, mở trang tải chính thức, hướng dẫn chọn "CABLE Output" và Open Mic trong Valorant. Có banner cảnh báo khi thiếu VB-Cable.
+  - Thu nhỏ xuống khay hệ thống; menu khay có Mở / Dừng tất cả / Thoát. Khởi động cùng Windows ghi vào HKCU Run và mở với `--minimized`.
+  - Chỉ chạy một phiên bản: mở lần hai thì cửa sổ đang chạy được đưa lên trước.
+- Thư viện: nhân bản và xóa bản sao sound. Không bao giờ ghi đè file có sẵn, không bao giờ đụng file ngoài thư viện.
+- Icon ứng dụng (`Assets/app.ico`).
+
+### Added (P2)
 - **P2 — Input.** Phím tắt toàn cục bằng `WH_KEYBOARD_LL` + `WH_MOUSE_LL`, không dùng `RegisterHotKey`.
   - Hook chạy trên luồng riêng có độ ưu tiên cao. Callback chỉ tra bảng binding rồi đẩy sự kiện vào `Channel`; action chạy ở luồng khác.
   - Hỗ trợ phím đơn, tổ hợp Ctrl/Alt/Shift/Win, và Mouse 4/5/giữa. Bỏ qua auto-repeat. Nhả phím vẫn được tính kể cả khi đã thả modifier trước.
