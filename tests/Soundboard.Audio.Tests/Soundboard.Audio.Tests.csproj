@@ -5,6 +5,12 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!--
+      The "allocates nothing" tests measure our audio callbacks, not the JIT. With tiered compilation
+      the runtime may re-JIT (tier-up / OSR) in the middle of the measured loop on a slow CI machine and
+      be counted against the test thread; compiling optimised code once, during warm-up, removes that noise.
+    -->
+    <TieredCompilation>false</TieredCompilation>
   </PropertyGroup>
 
   <ItemGroup>
