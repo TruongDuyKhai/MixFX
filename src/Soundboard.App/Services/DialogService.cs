@@ -66,6 +66,20 @@ public sealed class DialogService(IServiceProvider services) : IDialogService
         new EditorWindow(viewModel) { Owner = Owner }.ShowDialog();
     }
 
+    public CloseChoice? AskCloseAction()
+    {
+        // "Close window" from the taskbar arrives while the main window is minimised; centring on it would put
+        // the question off-screen, so it goes to the middle of the screen instead.
+        var owner = Owner is { WindowState: not WindowState.Minimized } main ? main : null;
+        var window = new CloseChoiceWindow
+        {
+            Owner = owner,
+            WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
+        };
+        window.ShowDialog();
+        return window.Choice;
+    }
+
     public DownloadedAudio? DownloadFromYouTube()
     {
         var viewModel = new YouTubeDownloadViewModel(

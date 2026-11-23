@@ -1,0 +1,24 @@
+<Window x:Class="Soundboard.App.Views.CloseChoiceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Đóng Soundboard"
+        Icon="/Assets/app.ico"
+        Width="460" SizeToContent="Height" ResizeMode="NoResize" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource ForegroundBrush}">
+  <StackPanel Margin="20">
+    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Bạn muốn làm gì?" />
+    <TextBlock Margin="0,6,0,14" TextWrapping="Wrap" Foreground="{StaticResource MutedForegroundBrush}"
+               Text="Thu nhỏ xuống khay: app vẫn chạy ngầm, phím tắt và sound vẫn dùng được khi chơi game. Mở lại bằng icon ở góc phải taskbar. Thoát: tắt hẳn app." />
+    <CheckBox x:Name="RememberBox" Content="Không hỏi lại" />
+    <TextBlock Margin="28,2,0,0" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource MutedForegroundBrush}"
+               Text="Đổi lại được ở mục &quot;Khi bấm X&quot; trong cửa sổ chính." />
+
+    <StackPanel Margin="0,18,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Padding="14,6" Content="Thu nhỏ xuống khay" Style="{StaticResource AccentButtonStyle}" IsDefault="True" Click="OnMinimizeToTray" />
+      <Button Margin="8,0,0,0" Padding="14,6" Content="Thoát" Click="OnExit" />
+      <Button Margin="8,0,0,0" Padding="14,6" Content="Hủy" IsCancel="True" />
+    </StackPanel>
+  </StackPanel>
+</Window>

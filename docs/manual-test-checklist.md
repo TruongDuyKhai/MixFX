@@ -33,7 +33,14 @@ dotnet test tests/Soundboard.Input.Tests -- xUnit.Explicit=only   # bắn phím 
 ## 3. Giao diện (P3)
 - [ ] Đổi micro / Output A / Output B trong danh sách → áp dụng ngay, giữ sau khi khởi động lại.
 - [ ] Slider âm lượng thay đổi ngay khi kéo; phím VolumeUp/VolumeDown đổi slider theo.
-- [ ] Thu nhỏ → app vào khay; nhấp đúp icon khay → hiện lại. Mở app lần hai → cửa sổ cũ hiện lên trước.
+- [ ] Nút thu nhỏ → cửa sổ xuống taskbar (không ẩn vào khay), bấm icon trên taskbar → hiện lại. Mở app lần hai → cửa sổ cũ hiện lên trước.
+- [ ] Nút X → hiện "Bạn muốn làm gì?":
+  - "Thu nhỏ xuống khay" → cửa sổ ẩn, phím tắt vẫn phát sound; nhấp đúp icon khay → hiện lại.
+  - "Hủy" (hoặc Esc) → cửa sổ vẫn mở. "Thoát" → app tắt hẳn.
+  - Tick "Không hỏi lại" rồi chọn → lần sau bấm X không hỏi nữa; mục "Khi bấm X" hiện đúng lựa chọn. Đổi về "Hỏi mỗi lần" → lần sau lại hỏi.
+  - Chuột phải icon trên taskbar → "Close window" khi đang thu nhỏ → câu hỏi hiện giữa màn hình.
+  - "Thoát" trong menu icon khay → tắt luôn, không hỏi. Đăng xuất Windows khi app đang mở → không bị chặn.
+- [ ] Settings v3 (bản 1.2.0) → mở bản mới, lần lưu đầu ghi v4 có `"window": { "closeAction": "Ask" }`, `.bak` là bản v3.
 - [ ] Tích "Khởi động cùng Windows", đăng xuất/đăng nhập → app chạy ẩn dưới khay.
 
 ## 4. Thư viện và Editor (P4)

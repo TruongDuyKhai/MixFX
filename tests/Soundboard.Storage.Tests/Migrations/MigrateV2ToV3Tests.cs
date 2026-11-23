@@ -79,7 +79,7 @@ public sealed class MigrateV2ToV3Tests : IDisposable
     }
 
     [Fact]
-    public async Task Store_LoadsV2FixtureAsV3_KeepingEveryP6Setting()
+    public async Task Store_LoadsV2Fixture_AtTheCurrentVersion_KeepingEveryP6Setting()
     {
         var paths = new StoragePaths(_dir.Path);
         Directory.CreateDirectory(_dir.Path);
@@ -91,7 +91,7 @@ public sealed class MigrateV2ToV3Tests : IDisposable
 
         loaded.Status.Should().Be(SettingsLoadStatus.Loaded);
         var s = loaded.Settings;
-        s.SchemaVersion.Should().Be(3);
+        s.SchemaVersion.Should().Be(AppSettings.CurrentSchemaVersion);
         s.Features.Should().Be(new FeatureFlags { Ducking = true, SoundEffects = true, Playlist = true });
         s.Audio.DuckingDb.Should().Be(-9f);
         s.Audio.VoicePitchSemitones.Should().Be(3f);
@@ -102,7 +102,7 @@ public sealed class MigrateV2ToV3Tests : IDisposable
         s.Bindings.Should().HaveCount(2);
 
         var saved = JsonNode.Parse(File.ReadAllText(paths.SettingsFile))!;
-        saved["schemaVersion"]!.GetValue<int>().Should().Be(3);
+        saved["schemaVersion"]!.GetValue<int>().Should().Be(AppSettings.CurrentSchemaVersion);
         saved["features"]!["youTubeImport"]!.GetValue<bool>().Should().BeFalse();
         File.ReadAllText(paths.SettingsBackupFile).Should().Contain("\"schemaVersion\": 2", "the v2 file is kept as the backup");
     }

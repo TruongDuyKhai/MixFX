@@ -71,6 +71,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _hasNoSounds = true;
     private bool _playlistEnabled;
     private bool _youTubeImportEnabled;
+    private CloseActionOption? _selectedCloseAction;
     private string _playlistNowText = "Playlist đang dừng";
 
     public MainViewModel(
@@ -146,6 +147,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _playlistEnabled;
         private set => SetProperty(ref _playlistEnabled, value);
+    }
+
+    public IReadOnlyList<CloseActionOption> CloseActionOptions => CloseActionOption.All;
+
+    /// <summary>"Khi bấm X": also where a remembered "Không hỏi lại" answer can be changed back.</summary>
+    public CloseActionOption? SelectedCloseAction
+    {
+        get => _selectedCloseAction;
+        set
+        {
+            if (SetProperty(ref _selectedCloseAction, value) && !_syncing && value is not null)
+            {
+                _settings.Update(s => s with { Window = s.Window with { CloseAction = value.Action } });
+            }
+        }
     }
 
     /// <summary>Shows "Tải từ YouTube" (<see cref="FeatureFlags.YouTubeImport"/>).</summary>
@@ -525,6 +541,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _dialogs.EditSound(sound.Id);
     }
 
+    /// <summary>
+    /// What the main window's X should do: <see cref="CloseAction.MinimizeToTray"/> or <see cref="CloseAction.Exit"/>,
+    /// or null to stay open because the user cancelled. Asks unless an answer was remembered with "Không hỏi lại".
+    /// </summary>
+    public CloseAction? ResolveCloseRequest()
+    {
+        var remembered = _settings.Current.Window.CloseAction;
+        if (IsCloseAnswer(remembered))
+        {
+            return remembered;
+        }
+
+        if (_dialogs.AskCloseAction() is not { } choice || !IsCloseAnswer(choice.Action))
+        {
+            return null;
+        }
+
+        if (choice.Remember)
+        {
+            _settings.Update(s => s with { Window = s.Window with { CloseAction = choice.Action } });
+        }
+
+        return choice.Action;
+    }
+
     public void Dispose()
     {
         // Idempotent: a throwing second call would abort the DI container's disposal of the engine and hooks.
@@ -693,6 +734,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             PlaylistEnabled = settings.Features.Playlist;
             YouTubeImportEnabled = settings.Features.YouTubeImport;
+            SelectedCloseAction = CloseActionOption.For(settings.Window.CloseAction);
             SyncTiles(settings);
             HasNoSounds = settings.Sounds.Count == 0;
         }
@@ -767,6 +809,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ? string.Empty
             : "Đang phát: " + string.Join(", ", Tiles.Where(t => t.IsPlaying).Select(t => t.Name));
     }
+
+    // settings.json is hand-editable and enums also accept numbers, so only these two are acted on.
+    private static bool IsCloseAnswer(CloseAction action) => action is CloseAction.MinimizeToTray or CloseAction.Exit;
 
     private async Task DownloadFromYouTubeAsync()
     {

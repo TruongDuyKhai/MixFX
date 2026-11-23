@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Soundboard.App.Services;
 using Soundboard.App.ViewModels;
+using Soundboard.Core.Abstractions;
 using Soundboard.Core.Downloads;
+using Soundboard.Core.Models;
 
 namespace Soundboard.App.Tests;
 
@@ -35,10 +37,84 @@ public sealed class MainViewModelTests
         dialogs.Errors.Should().ContainSingle().Which.Should().Contain("Me at the zoo");
     }
 
-    private static MainViewModel Create(FakeAudioDownloader? downloader = null, IDialogService? dialogs = null)
+    [Fact]
+    public void Close_ByDefault_AsksEachTimeWithoutStoringTheAnswer()
+    {
+        var settings = new MutableSettings(new AppSettings());
+        var dialogs = new RecordingDialogs { NextCloseChoice = new CloseChoice(CloseAction.MinimizeToTray, Remember: false) };
+        using var viewModel = Create(dialogs: dialogs, settings: settings);
+
+        viewModel.ResolveCloseRequest().Should().Be(CloseAction.MinimizeToTray);
+        viewModel.ResolveCloseRequest().Should().Be(CloseAction.MinimizeToTray);
+
+        dialogs.CloseQuestions.Should().Be(2);
+        settings.Current.Window.CloseAction.Should().Be(CloseAction.Ask);
+    }
+
+    [Theory]
+    [InlineData(CloseAction.MinimizeToTray)]
+    [InlineData(CloseAction.Exit)]
+    public void Close_DontAskAgain_StoresTheAnswerAndStopsAsking(CloseAction answer)
+    {
+        var settings = new MutableSettings(new AppSettings());
+        var dialogs = new RecordingDialogs { NextCloseChoice = new CloseChoice(answer, Remember: true) };
+        using var viewModel = Create(dialogs: dialogs, settings: settings);
+
+        viewModel.ResolveCloseRequest().Should().Be(answer);
+        viewModel.ResolveCloseRequest().Should().Be(answer);
+
+        dialogs.CloseQuestions.Should().Be(1);
+        settings.Current.Window.CloseAction.Should().Be(answer);
+    }
+
+    [Fact]
+    public void Close_Cancelled_StaysOpenAndStoresNothing()
+    {
+        var settings = new MutableSettings(new AppSettings());
+        var dialogs = new RecordingDialogs { NextCloseChoice = null };
+        using var viewModel = Create(dialogs: dialogs, settings: settings);
+
+        viewModel.ResolveCloseRequest().Should().BeNull();
+
+        settings.Current.Window.CloseAction.Should().Be(CloseAction.Ask);
+    }
+
+    [Fact]
+    public void Close_UnknownStoredValue_IsTreatedAsAsk()
+    {
+        // settings.json is hand-editable and enums also deserialize from numbers.
+        var settings = new MutableSettings(new AppSettings { Window = new WindowSettings { CloseAction = (CloseAction)42 } });
+        var dialogs = new RecordingDialogs { NextCloseChoice = new CloseChoice(CloseAction.Exit, Remember: false) };
+        using var viewModel = Create(dialogs: dialogs, settings: settings);
+
+        viewModel.ResolveCloseRequest().Should().Be(CloseAction.Exit);
+
+        dialogs.CloseQuestions.Should().Be(1);
+    }
+
+    [Fact]
+    public void ClosePicker_FollowsSettings_AndChangingItBringsTheQuestionBack()
+    {
+        var settings = new MutableSettings(new AppSettings());
+        var dialogs = new RecordingDialogs { NextCloseChoice = new CloseChoice(CloseAction.MinimizeToTray, Remember: true) };
+        using var viewModel = Create(dialogs: dialogs, settings: settings);
+        viewModel.Start();
+        viewModel.SelectedCloseAction!.Action.Should().Be(CloseAction.Ask);
+
+        viewModel.ResolveCloseRequest();
+        viewModel.SelectedCloseAction!.Action.Should().Be(CloseAction.MinimizeToTray, "the picker shows the remembered answer");
+
+        viewModel.SelectedCloseAction = CloseActionOption.For(CloseAction.Ask);
+        viewModel.ResolveCloseRequest();
+
+        settings.Current.Window.CloseAction.Should().Be(CloseAction.MinimizeToTray);
+        dialogs.CloseQuestions.Should().Be(2, "choosing \"Hỏi mỗi lần\" asks again");
+    }
+
+    private static MainViewModel Create(FakeAudioDownloader? downloader = null, IDialogService? dialogs = null, ISettingsProvider? settings = null)
     {
         var engine = new StubEngine();
-        var settings = new StubSettings();
+        settings ??= new StubSettings();
         return new MainViewModel(
             engine,
             settings,

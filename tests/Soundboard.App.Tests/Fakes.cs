@@ -126,6 +126,17 @@ internal sealed class RecordingDialogs : IDialogService
 {
     public List<string> Errors { get; } = [];
 
+    /// <summary>What the "Bạn muốn làm gì?" question answers; null is "Hủy".</summary>
+    public CloseChoice? NextCloseChoice { get; set; }
+
+    public int CloseQuestions { get; private set; }
+
+    public CloseChoice? AskCloseAction()
+    {
+        CloseQuestions++;
+        return NextCloseChoice;
+    }
+
     public bool Confirm(string message, string title) => false;
 
     public void ShowError(string message) => Errors.Add(message);
@@ -195,6 +206,8 @@ internal sealed class StubWaveforms : IWaveformService
 internal sealed class StubDialogs : IDialogService
 {
     public bool Confirm(string message, string title) => false;
+
+    public CloseChoice? AskCloseAction() => null;
 
     public void ShowError(string message)
     {

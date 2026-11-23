@@ -142,6 +142,11 @@
           </TextBlock>
           <CheckBox Content="Sound mới dừng sound cũ" IsChecked="{Binding ExclusivePlayback}" />
           <CheckBox Content="Khởi động cùng Windows" IsChecked="{Binding StartWithWindows}" />
+          <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+            <TextBlock VerticalAlignment="Center" Text="Khi bấm X:" />
+            <ComboBox Margin="6,0,0,0" MinWidth="160" ItemsSource="{Binding CloseActionOptions}" DisplayMemberPath="Label"
+                      SelectedItem="{Binding SelectedCloseAction}" />
+          </StackPanel>
         </StackPanel>
 
         <StackPanel Grid.Column="4" VerticalAlignment="Center" Width="200">

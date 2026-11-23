@@ -158,7 +158,10 @@ Thêm tính năng mới nghĩa là **thêm class `IAction` mới**, không sửa
 ### 5.6 Giao diện
 - Dark theme. Thanh trên: chọn mic / Output A / Output B, đèn mic. Giữa: **lưới ô sound** (tên, màu, hotkey, thanh tiến trình khi phát). Dưới: các slider âm lượng, nút Stop all, tên sound đang phát.
 - Chuột phải vào ô để có menu Sửa / Đổi phím / Xóa / Nhân bản.
-- Thu nhỏ xuống **system tray**. Có tùy chọn khởi động cùng Windows.
+- Nút thu nhỏ đưa cửa sổ xuống **taskbar** như app bình thường.
+- Nút **X** (và Alt+F4) hỏi "Thu nhỏ xuống khay" / "Thoát" / "Hủy", có ô **"Không hỏi lại"**. Câu trả lời được nhớ trong `AppSettings.Window.CloseAction` (`Ask` | `MinimizeToTray` | `Exit`), đổi lại được ở mục "Khi bấm X" trong cửa sổ chính.
+- Ở **system tray**, app vẫn chạy ngầm và phím tắt vẫn hoạt động. "Thoát" trong menu của icon khay, hoặc Windows tắt máy / đăng xuất, thì thoát luôn, không hỏi.
+- Có tùy chọn khởi động cùng Windows (chạy ẩn dưới khay).
 - Màn hình **Setup lần đầu**: kiểm tra VB-Cable. Nếu chưa có thì hướng dẫn tải và cài, rồi hướng dẫn chọn mic "CABLE Output" + Open Mic trong Valorant.
 
 ### 5.7 Lưu trữ
@@ -350,3 +353,4 @@ Bản self-contained nên máy cài **không cần** có sẵn .NET.
 | 2026-11-22 | Mỗi output có mixer và voice riêng; mic sang Output A qua ring buffer lock-free có trần độ trễ; đọc đĩa cho sound dài chạy ở luồng engine | Hai thiết bị chạy trên hai clock khác nhau nên không chia sẻ buffer; audio callback không được lock, cấp phát hay I/O (mục 7.3.8) |
 | 2026-11-23 | Tải nhạc từ YouTube (cờ `YouTubeImport`, schema **v3**, `MigrateV2ToV3`). Thêm `IAudioDownloader` (interface mới, không đổi interface cũ) (ADR 0005) | Người dùng yêu cầu. Theo luật 7.2.7 tính năng mới phải sau cờ, nên phải thêm khóa vào settings (luật 7.4.13) |
 | 2026-11-23 | **App tự tải yt-dlp (Unlicense) và Deno (MIT) lúc chạy** từ GitHub chính thức, kiểm SHA-256, không đóng gói kèm. Không thêm package NuGet; chỉ lấy âm thanh m4a nên không cần ffmpeg (ADR 0005) | Người dùng chọn cách này thay cho tự cài. yt-dlp phải cập nhật thường xuyên vì YouTube hay đổi; bản đóng gói kèm sẽ nhanh hỏng. ffmpeg (LGPL/GPL) không thuộc danh sách license của mục 3 |
+| 2026-11-23 | Mục 5.6: nút thu nhỏ xuống **taskbar**; nút X hỏi thu nhỏ xuống khay hay thoát, có "Không hỏi lại" (`AppSettings.Window.CloseAction`, schema **v4**, `MigrateV3ToV4`). Không đặt sau cờ thử nghiệm | Người dùng yêu cầu: khi đang chơi game cần mở lại app nhanh từ taskbar thay vì tìm icon trong khay. Đây là hành vi mặc định người dùng chọn (luật 7.2.6), chỉ đổi cách cửa sổ phản ứng, không đụng audio hay input |
