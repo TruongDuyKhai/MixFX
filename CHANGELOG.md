@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-23
+
 ### Added
 - **Nút X hỏi bạn muốn làm gì:** "Thu nhỏ xuống khay" (app chạy ngầm, phím tắt vẫn dùng được), "Thoát" hoặc "Hủy".
   - Tick "Không hỏi lại" thì những lần sau làm luôn theo lựa chọn đó. Đổi lại được ở mục "Khi bấm X" trong cửa sổ chính.
