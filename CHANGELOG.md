@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-23
+
 ### Added
 - **Tải nhạc từ YouTube** (thử nghiệm, mặc định tắt, ADR 0005). Bật trong cửa sổ "Thử nghiệm" thì có thêm nút "Tải từ YouTube":
   - Dán link một video (tối đa 20 phút). App lấy phần âm thanh, thêm vào soundboard với tên video, rồi mở Editor.
