@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 3,
+  "audio": {
+    "micDeviceId": "{0.0.1.00000000}.{11111111-1111-1111-1111-111111111111}",
+    "gameOutputDeviceId": null,
+    "monitorOutputDeviceId": "{0.0.0.00000000}.{33333333-3333-3333-3333-333333333333}",
+    "volumeToGame": 0.8,
+    "volumeToMonitor": 0.5,
+    "micVolume": 1.2,
+    "micMode": "PushToTalk",
+    "playbackMode": "Exclusive",
+    "duckingDb": -9,
+    "voicePitchSemitones": 3
+  },
+  "sounds": [
+    {
+      "id": "6f1c2a3b-0000-4000-8000-000000000001",
+      "name": "Airhorn",
+      "libraryFile": "6f1c2a3b-0000-4000-8000-000000000001.mp3",
+      "color": "#FF5722",
+      "volume": 0.9,
+      "kind": "Preloaded",
+      "edit": {
+        "trimStartMs": 120,
+        "trimEndMs": 2500,
+        "fadeInMs": 10,
+        "fadeOutMs": 200,
+        "gainDb": -3.5,
+        "effects": [
+          { "effectId": "reverb", "params": { "room": "0.6", "wet": "0.3" } }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "6f1c2a3b-0000-4000-8000-000000000002",
+      "trigger": { "device": "Keyboard", "code": 97, "modifiers": "Ctrl, Shift" },
+      "actionId": "PlaySound",
+      "targetId": "6f1c2a3b-0000-4000-8000-000000000001",
+      "mode": "Restart",
+      "passThrough": true
+    }
+  ],
+  "features": {
+    "ducking": true,
+    "soundEffects": false,
+    "voiceChanger": false,
+    "playlist": true,
+    "webRemote": false,
+    "youTubeImport": true
+  },
+  "playlist": [
+    "6f1c2a3b-0000-4000-8000-000000000001"
+  ],
+  "webRemote": {
+    "port": 9000,
+    "token": "fixture-token-not-a-secret"
+  }
+}

@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using Soundboard.App.ViewModels;
+using Soundboard.Core.Models;
 
 namespace Soundboard.App.Views;
 
@@ -10,6 +12,8 @@ public partial class MainWindow : Window
 
     // The tile whose mouse-down started a press, so its release is sent even if the pointer moved off it.
     private SoundTileViewModel? _pressedTile;
+
+    private bool _closeWithoutAsking;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -33,14 +37,34 @@ public partial class MainWindow : Window
         Activate();
     }
 
-    protected override void OnStateChanged(EventArgs e)
-    {
-        base.OnStateChanged(e);
+    /// <summary>
+    /// The next close quits without the question: "Thoát" in the tray menu, or Windows signing out. A dialog
+    /// there would hold up shutdown, and the tray menu already says what it does.
+    /// </summary>
+    public void AllowCloseWithoutAsking() => _closeWithoutAsking = true;
 
-        // Minimising sends the app to the tray (§5.6); it keeps running and listening for hotkeys.
-        if (WindowState == WindowState.Minimized)
+    // Minimising is left to Windows (taskbar), so the board is one click away during a game; the tray is
+    // reached through the close button instead (§5.6).
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        if (e.Cancel || _closeWithoutAsking)
         {
-            Hide();
+            return;
+        }
+
+        switch (_viewModel.ResolveCloseRequest())
+        {
+            case CloseAction.Exit:
+                // ShutdownMode is OnMainWindowClose: letting this window close quits the app.
+                break;
+            case CloseAction.MinimizeToTray:
+                e.Cancel = true;
+                Hide();
+                break;
+            default:
+                e.Cancel = true;
+                break;
         }
     }
 

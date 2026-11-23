@@ -24,6 +24,9 @@ public interface IDialogService
     /// <summary>Opens the editor for a sound already on the board.</summary>
     void EditSound(Guid soundId);
 
+    /// <summary>"Bạn muốn làm gì?" for the main window's X; null when the user cancelled.</summary>
+    CloseChoice? AskCloseAction();
+
     /// <summary>"Tải từ YouTube" (§5.8). The downloaded file, or null when the user closed the window without one.</summary>
     DownloadedAudio? DownloadFromYouTube();
 

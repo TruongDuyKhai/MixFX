@@ -73,7 +73,12 @@ public partial class App : Application
 
             var window = services.GetRequiredService<MainWindow>();
             MainWindow = window;
-            _tray = new TrayIcon(window.ShowFromTray, viewModel.StopAll, Shutdown);
+            _tray = new TrayIcon(window.ShowFromTray, viewModel.StopAll, () =>
+            {
+                window.AllowCloseWithoutAsking();
+                Shutdown();
+            });
+            SessionEnding += (_, _) => window.AllowCloseWithoutAsking();
             _singleInstance.ListenForActivation(() => Dispatcher.BeginInvoke(window.ShowFromTray));
 
             var startHidden = e.Args.Contains(StartupRegistration.MinimizedArgument, StringComparer.OrdinalIgnoreCase);

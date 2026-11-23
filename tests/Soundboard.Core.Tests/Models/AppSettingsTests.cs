@@ -17,6 +17,12 @@ public sealed class AppSettingsTests
     }
 
     [Fact]
+    public void DefaultWindow_AsksWhatTheCloseButtonDoes()
+    {
+        new AppSettings().Window.CloseAction.Should().Be(CloseAction.Ask);
+    }
+
+    [Fact]
     public void DefaultAudio_IsUnityGainPushToTalkOverlapAndNoDevicesChosen()
     {
         var audio = new AppSettings().Audio;

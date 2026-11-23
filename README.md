@@ -28,7 +28,7 @@ App **không** can thiệp vào game: không inject, không đọc/ghi bộ nh�
   - Nghe thử chỉ qua tai nghe.
   - Export WAV.
 - Âm lượng riêng cho: sound → đồng đội, sound → tai nghe, giọng.
-- Thu nhỏ xuống khay hệ thống, khởi động cùng Windows, tự kết nối lại khi rút/cắm thiết bị.
+- Thu nhỏ xuống taskbar; nút X hỏi thu nhỏ xuống khay (chạy ngầm) hay thoát, có "Không hỏi lại". Khởi động cùng Windows, tự kết nối lại khi rút/cắm thiết bị.
 - **Thử nghiệm** (tắt sẵn, bật ở nút "Thử nghiệm"): ducking, pitch/reverb cho sound, voice changer, playlist, web remote, tải nhạc từ YouTube.
 
 ### Web remote (Stream Deck, script)

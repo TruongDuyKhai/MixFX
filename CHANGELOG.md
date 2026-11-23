@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Added
+- **Nút X hỏi bạn muốn làm gì:** "Thu nhỏ xuống khay" (app chạy ngầm, phím tắt vẫn dùng được), "Thoát" hoặc "Hủy".
+  - Tick "Không hỏi lại" thì những lần sau làm luôn theo lựa chọn đó. Đổi lại được ở mục "Khi bấm X" trong cửa sổ chính.
+  - "Thoát" trong menu của icon khay, hoặc Windows tắt máy / đăng xuất, thì thoát luôn, không hỏi.
+- Schema settings **v4** (`MigrateV3ToV4`, test bằng fixture v3): thêm `window.closeAction` (mặc định `Ask`).
+
+### Changed
+- **Nút thu nhỏ giờ đưa cửa sổ xuống taskbar** như app bình thường, không ẩn vào khay nữa, để mở lại nhanh khi đang chơi game.
+
 ## [1.2.0] - 2026-11-23
 
 ### Added
